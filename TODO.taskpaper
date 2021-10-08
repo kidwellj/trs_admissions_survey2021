@@ -1,0 +1,38 @@
+# Prep work (JK):
+	- JK: aggregation of free-text answers: Q17, Q18 so that they can be used for subsetting
+
+# Basic summary visualisations (RH):
+- Q2 (respondent age)
+- Q3 (year of study)
+- Q16 (gender identity)
+- Q17 (ethnic self-id)
+- Q18 (religion)
+
+# Visualisations of LIKERT responses (RH):
+- For questions Q6 (subject interest) / Q5 (subject knowledge) / Q7 employability prospects: 
+	- visualisation as summaries for all subjects LIKERT data as stacked bar chart (colours for bar segments from cool to warm)
+	- separate visualisation of summary data as pie chart only for 4 key subjects: Philosophy, Ethics, Theology, Religious Studies, but with data represented as aggregated "Positive" / "Negative" responses
+	- subsetted visualisations of responses with separate subsetting by response to Q8-9, Q18, Q17, Q16
+- For question Q8 + Q9 (for religious people) 
+	- visualisation summary of responses
+	- show subsetted visualisations of responses by response to, Q18, Q17, Q16, Q13, Q14
+- For responses to Q10-12 (what subjects are involved in...):
+	- represent answer counts as descending bar chart for each Q
+	- subset answers by Q6 (positive / negative) and Q5 (positive / negative)
+
+# Correlation testing:
+- For Q6 (subject interest) / Q5 (subject knowledge) / Q7 employability prospects, test for nature / strength of correlation with responses to:
+	- Q8-9 responses
+	- Q18 responses
+	- Q17
+	- Q18
+
+For later:
+- JK: calcuate baseline comparator using UCAS application data for Q5/6, stack with UOB application data for key subjects + 2-3 other samples
+
+Bonus, if time permitting:
+- show numeric count with percentage calc of total for "prefer not to say" and "Neither/Nor" responses on bar chart for Q5/Q6/Q7
+- test for correlations between responses to Q10-12 and Q5-7
+- create sankey visualisation of answers on Q6/5/7 with Religion / Theology
+- create concept map visualisation of answers on Q5-7
+- create sunburst style visualisation to represent subsetting on Q5-7
