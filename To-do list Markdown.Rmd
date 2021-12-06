@@ -1,0 +1,102 @@
+---
+title: "RMarkdown Admissions_Survey2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Upload Data
+```{r Upload Data}
+TSR_data <- read.csv("./data/TSR data complete.csv")
+```
+
+# Basic summary visualisations (RH):
+- Q2 (respondent age)
+```{r respondent age}
+TSR_data$Age <- factor(TSR_data$Age, levels = c(1, 2, 3, 4, 5, 6, 7, 8), labels = c("15 or under", "16", "17", "18", "19", "20", "21 or over", "Prefer not to say"))
+age_pie <- pie(table(TSR_data$Age))
+
+```
+- Q3 (year of study)
+```{r year of study}
+TSR_data$MOST.RECENT.year.of.study <- factor(TSR_data$MOST.RECENT.year.of.study, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), labels = c("Year 11/S4/Year 12(NI)", "Year 12/S5/Year 13(NI)", "Year 13/S6/Year 14(NI)", "I am currently on a gap year", "I am currently on an undergraduate/HE college course", "I am in full-time employment", "I am unemployed", "Other", "Prefer not to say"))
+
+Year_study_pie <- pie(table(TSR_data$MOST.RECENT.year.of.study))
+
+```
+- Q16 (gender identity)
+```{r gender identity}
+
+TSR_data$Gender <- factor(TSR_data$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
+
+gender_pie <- pie(table(TSR_data$Gender))
+```
+- Q17 (ethnic self-id)
+```{r ethnic self-id}
+
+TSR_data$Ethnicity <- factor(TSR_data$Ethnicity, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19), labels = c("Arab", "Asian/Asian British - Indian", "Asian/Asian British - Pakistani", "Asian/Asian British - Bangladeshi", "Asian/Asian British - Chinese", "Asian/Asian British - Any other Asian background", "Black/Black British - African", "Black/Black British - Caribbean", "Black/Black British - Any other Black background", "Mixed/Multiple Ethnic Groups - White and Black Caribbean", "Mixed/Multiple Ethnic Groups - White and Black African", "Mixed/Multiple Ethnic Groups - White and Black Asian", "Mixed/Multiple Ethnic Groups - Any other Mixed/Multiple Ethnic background", "White - English/Welsh/Scottish/Northern Irish/British", "White - Irish", "White - Gypsy or Irish Traveller", "White - Any other White background", "Other Ethnic group, please describe", "Prefer not to say"))
+
+#Ethnicity_bar <- ggplot(TSR_data, aes(x = Ethnicity) + geom_bar(position = "stack"))
+```
+- Q18 (religion)
+```{r religion}
+TSR_data$Religious.Affliation <- factor(TSR_data$Religious.Affliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
+
+#Religious_affiliation_bar <- ggplot(TSR_data, aes(x = Religious.Affliation) + geom_bar(position = "stack"))
+
+```
+
+# Visualisations of LIKERT responses (RH):
+- For questions Q6 (subject interest) / Q5 (subject knowledge) / Q7 employability prospects: 
+	- visualisation as summaries for all subjects LIKERT data as stacked bar chart (colours for bar segments from cool to warm)
+	
+```{r Visualization by Subject}
+### Each Subject is a different column so will need to figure out how to code the columns together into one graph
+
+#Q6 Subject Interest
+
+#Q5 Subject Knowledge
+
+#Q7 Employability Prospects
+
+
+```
+	- separate visualisation of summary data as pie chart only for 4 key subjects: Philosophy, Ethics, Theology, Religious Studies, but with data represented as aggregated "Positive" / "Negative" responses
+	- subsetted visualisations of responses with separate subsetting by response to Q8-9, Q18, Q17, Q16
+- For question Q8 + Q9 (for religious people) 
+	- visualisation summary of responses
+	- show subsetted visualisations of responses by response to, Q18, Q17, Q16, Q13, Q14
+- For responses to Q10-12 (what subjects are involved in...):
+	- represent answer counts as descending bar chart for each Q
+	- subset answers by Q6 (positive / negative) and Q5 (positive / negative)
+
+# Correlation testing:
+- For Q6 (subject interest) / Q5 (subject knowledge) / Q7 employability prospects, test for nature / strength of correlation with responses to:
+	- Q8-9 responses
+	- Q18 responses
+	- Q17
+	- Q18
+
+
