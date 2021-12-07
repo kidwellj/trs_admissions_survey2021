@@ -55,16 +55,18 @@ gender_pie <- pie(table(TSR_data$Gender))
 ```
 - Q17 (ethnic self-id)
 ```{r ethnic self-id}
-
+library(ggplot2)
 TSR_data$Ethnicity <- factor(TSR_data$Ethnicity, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19), labels = c("Arab", "Asian/Asian British - Indian", "Asian/Asian British - Pakistani", "Asian/Asian British - Bangladeshi", "Asian/Asian British - Chinese", "Asian/Asian British - Any other Asian background", "Black/Black British - African", "Black/Black British - Caribbean", "Black/Black British - Any other Black background", "Mixed/Multiple Ethnic Groups - White and Black Caribbean", "Mixed/Multiple Ethnic Groups - White and Black African", "Mixed/Multiple Ethnic Groups - White and Black Asian", "Mixed/Multiple Ethnic Groups - Any other Mixed/Multiple Ethnic background", "White - English/Welsh/Scottish/Northern Irish/British", "White - Irish", "White - Gypsy or Irish Traveller", "White - Any other White background", "Other Ethnic group, please describe", "Prefer not to say"))
 
-#Ethnicity_bar <- ggplot(TSR_data, aes(x = Ethnicity) + geom_bar(position = "stack"))
+Ethnicity_bar <- ggplot(TSR_data, aes(Ethnicity)) + geom_bar() + coord_flip()
+Ethnicity_bar
 ```
 - Q18 (religion)
 ```{r religion}
 TSR_data$Religious.Affliation <- factor(TSR_data$Religious.Affliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
 
-#Religious_affiliation_bar <- ggplot(TSR_data, aes(x = Religious.Affliation) + geom_bar(position = "stack"))
+Religious_affiliation_bar <- ggplot(TSR_data, aes(Religious.Affliation)) + geom_bar() + coord_flip()
+Religious_affiliation_bar
 
 ```
 
@@ -74,13 +76,38 @@ TSR_data$Religious.Affliation <- factor(TSR_data$Religious.Affliation, levels = 
 	
 ```{r Visualization by Subject}
 ### Each Subject is a different column so will need to figure out how to code the columns together into one graph
+  # Higher score indicates less agreement...need to reverse score
+
+## 1=5, 2=4, 3=3, 4=2, 5=1, 6=0 --- Not done yet. See what they look like without reverse scoring
+
+# The way the code is now - the below will help you visualize overall across the entire respondent cohort what the understanding, interest, and view of employability are by subject
+
+subject_data <- read.csv("./data/Subject data.csv")
+
+#Q5 Subject Knowledge/Understanding
+subject_data$Subject <- factor(subject_data$Subject, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), labels = c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business"))
+
+understanding_mean <- aggregate(Understanding ~ Subject, data = subject_data, mean)
+
+
+#understanding_bar <- ggplot(subject_data, aes(x = Subject, y = aggregate(Understanding, by = Subject, FUN = mean))) + geom_bar() + labs(x = "Subject") + labs(y = "Understanding")
+#understanding_bar
+
+understanding_bar <- ggplot(understanding_mean, aes(x = Subject, y = Understanding)) + stat_summary(fun = "mean", geom = "bar") + coord_flip()
+understanding_bar
 
 #Q6 Subject Interest
+interest_mean <- aggregate(Interest ~ Subject, data = subject_data, mean)
 
-#Q5 Subject Knowledge
+interest_bar <- ggplot(interest_mean, aes(x = Subject, y = Interest)) + stat_summary(fun = "mean", geom = "bar") + coord_flip()
+interest_bar
 
 #Q7 Employability Prospects
 
+employability_mean <- aggregate(Employability ~ Subject, data = subject_data, mean)
+
+employability_bar <- ggplot(employability_mean, aes(x = Subject, y = Employability)) + stat_summary(fun = "mean", geom = "bar") + coord_flip()
+employability_bar
 
 ```
 	- separate visualisation of summary data as pie chart only for 4 key subjects: Philosophy, Ethics, Theology, Religious Studies, but with data represented as aggregated "Positive" / "Negative" responses
