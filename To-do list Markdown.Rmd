@@ -155,4 +155,3 @@ table(keysubjects_data$recode_interest, keysubjects_data$Subject)
 #Q18 (Religion)
   # This would also be categorical, so ANOVA
 ```
->>>>>>> Stashed changes
