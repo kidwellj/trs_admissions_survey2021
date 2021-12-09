@@ -89,7 +89,22 @@ employability_bar <- ggplot(employability_mean, aes(x = Subject, y = Employabili
 employability_bar
 
 ```
+
 	- separate visualisation of summary data as pie chart only for 4 key subjects: Philosophy, Ethics, Theology, Religious Studies, but with data represented as aggregated "Positive" / "Negative" responses
+	
+```{r Visualization for 4 Key Subjects}
+## Subset by "Positive" / "Negative"
+
+keysubjects_data <- subject_data[subject_data$Subject == "Philosophy" | subject_data$Subject == "Ethics" | subject_data$Subject == "Theology" | subject_data$Subject == "Religious Studies", ]
+
+recode_interest <- ifelse(1 <= keysubjects_data$Interest & keysubjects_data$Interest >=3, "Positive", "Negative")
+
+keysubjects_data <- cbind(keysubjects_data, recode_interest)
+keysubjects_data$recode_interest <- factor(keysubjects_data$recode_interest)
+
+table(keysubjects_data$recode_interest, keysubjects_data$Subject)
+
+```
 	- subsetted visualisations of responses with separate subsetting by response to Q8-9, Q18, Q17, Q16
 - For question Q8 + Q9 (for religious people) 
 	- visualisation summary of responses
@@ -103,4 +118,41 @@ employability_bar
 	- Q8-9 responses
 	- Q18 responses
 	- Q17
+<<<<<<< Updated upstream
 	- Q18
+=======
+	- Q18
+```{r Q6 Correlations - Subject Interest}
+#Q8-9 (8 - Theology as subject for religious people; 9 - Religion as study for religious people)
+  # This would be suitable for correlation
+
+#Q17 (Ethnicity)
+  # This would be categorical, so ANOVA
+
+#Q18 (Religion)
+  # This would also be categorical, so ANOVA
+
+```
+
+```{r Q5 Correlations - Subject Knowledge}
+#Q8-9 (8 - Theology as subject for religious people; 9 - Religion as study for religious people)
+  # This would be suitable for correlation
+
+#Q17 (Ethnicity)
+  # This would be categorical, so ANOVA
+
+#Q18 (Religion)
+  # This would also be categorical, so ANOVA
+```
+
+```{r Q7 Correlations - Employability}
+#Q8-9 (8 - Theology as subject for religious people; 9 - Religion as study for religious people)
+  # This would be suitable for correlation
+
+#Q17 (Ethnicity)
+  # This would be categorical, so ANOVA
+
+#Q18 (Religion)
+  # This would also be categorical, so ANOVA
+```
+>>>>>>> Stashed changes
