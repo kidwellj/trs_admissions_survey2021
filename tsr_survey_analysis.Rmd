@@ -14,12 +14,25 @@ library(likert)
 # install.packages("RColorBrewer")
 library(RColorBrewer)
 library("stringr")                   # Load stringr package, used for wrapping label text in plots
+library(dplyr)    # Used for filtering below
+library(scales) # Used for adding percentages to bar charts
 
 # Define colour palettes for plots below
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
 
 TSR_data <- read.csv("./data/TSR data complete.csv")
 subject_data <- read.csv("./data/Subject data.csv")
+
+# Set up local workspace:
+if (dir.exists("data") == FALSE) {
+  dir.create("data") 
+}
+if (dir.exists("figures") == FALSE) {
+  dir.create("figures") 
+}
+if (dir.exists("derivedData") == FALSE) {
+  dir.create("derivedData")
+}
 ```
 
 # Basic demographic summary visualisations:
@@ -71,11 +84,55 @@ ggsave("figures/TSR_data_summaries_ethnicity.png")
 
 TSR_data_summaries_religion <- factor(TSR_data$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
 
+# Adding a subset for charting out composition of group which specifically marked positive sentiments wrt/ theology or religious studies
+
+TSR_data_theology_positive <- filter(TSR_data, InterestedinstudyingTheology >= 4 & InterestedinstudyingTheology != 0)
+TSR_data_theology_negative <- filter(TSR_data, InterestedinstudyingTheology <= 2 & InterestedinstudyingTheology != 0)
+
+TSR_data_rs_positive <- filter(TSR_data, InterestedinstudyingReligiousStudies >= 4 & InterestedinstudyingReligiousStudies != 0)
+TSR_data_rs_negative <- filter(TSR_data, InterestedinstudyingReligiousStudies <= 2 & InterestedinstudyingReligiousStudies != 0)
+
+TSR_data_theology_positive_summaries_religion <- factor(TSR_data_theology_positive$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
+
+TSR_data_theology_negative_summaries_religion <- factor(TSR_data_theology_negative$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
+
+TSR_data_rs_positive_summaries_religion <- factor(TSR_data_rs_positive$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
+
+TSR_data_rs_negative_summaries_religion <- factor(TSR_data_rs_negative$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
+
+# Calculate graphs
+
 Religious_affiliation_bar <- ggplot(TSR_data, aes(TSR_data_summaries_religion)) + geom_bar() + coord_flip()
 Religious_affiliation_bar + labs(title = "Respondent religious self-identification", x = "", y = "")
 # save to png file for reports
 ggsave("figures/TSR_data_summaries_religion.png")
 
+# Additional graphs for theology/rs positive sentiment cohorts
+
+# Theology
+
+# JK note: need to add percentages to each line, as per https://stackoverflow.com/questions/52373049/display-percentage-on-ggplot-bar-chart-in-r
+
+Religious_affiliation_bar2 <- ggplot(TSR_data_theology_positive, aes(TSR_data_theology_positive_summaries_religion)) + geom_bar() + coord_flip()
+Religious_affiliation_bar2 + labs(title = "Respondent religious self-identification, positive sentiment towards theology", x = "", y = "")
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_religion_theologypositive.png")
+
+# RS
+
+Religious_affiliation_bar3 <- ggplot(TSR_data_rs_positive, aes(TSR_data_rs_positive_summaries_religion)) + geom_bar() + coord_flip()
+Religious_affiliation_bar3 + labs(title = "Respondent religious self-identification, positive sentiment towards rs", x = "", y = "")
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_religion_rspositive.png")
+
+irisNew <- iris %>% group_by(Species) %>% 
+ summarize(count = n()) %>%  # count records by species
+ mutate(pct = count/sum(count))  # find percent of total
+
+ggplot(irisNew, aes(Species, pct, fill = Species)) + 
+  geom_bar(stat='identity') + 
+  geom_text(aes(label=scales::percent(pct)), position = position_stack(vjust = .5))+
+  scale_y_continuous(labels = scales::percent)
 ```
 
 # Visualisations of LIKERT responses (RH):
@@ -138,14 +195,18 @@ Employability_data <- TSR_data[, 30:41]
 ```{r Visualization for 4 Key Subjects}
 ## Subset by "Positive" / "Negative"
 
-keysubjects_data <- subject_data[subject_data$Subject == "Philosophy" | subject_data$Subject == "Ethics" | subject_data$Subject == "Theology" | subject_data$Subject == "Religious Studies", ]
+keysubjects_data <- subject_data[subject_data$Subject == "Philosophy" | subject_data$Subject == "Ethics" | subject_data$Subject == "Theology" | subject_data$Subject == "Religious Studies" | subject_data$Subject == "Sociology" | subject_data$Subject == "Psychology" | subject_data$Subject == "History" | subject_data$Subject == "Politics" | subject_data$Subject == "English" | subject_data$Subject == "Math" | subject_data$Subject == "Computer Science" | subject_data$Subject == "Business", ]
 
 recode_interest <- ifelse(2 <= keysubjects_data$Interest & keysubjects_data$Interest >=4, "Positive", "Negative")
 
 keysubjects_data <- cbind(keysubjects_data, recode_interest)
 keysubjects_data$recode_interest <- factor(keysubjects_data$recode_interest)
 
-table(keysubjects_data$recode_interest, keysubjects_data$Subject)
+interest_table <- table(keysubjects_data$recode_interest, keysubjects_data$Subject)
+# export table to csv
+write.csv(interest_table, "derivedData/interest_table.csv", row.names=TRUE)
+
+
 
 ```
 	- subsetted visualisations of responses with separate subsetting by response to Q8-9, Q18, Q17, Q16
@@ -415,8 +476,11 @@ mean(as.numeric(Busi_subset_High$InterestedinstudyingReligiousStudies), na.rm = 
 
 ```{r Philosophy}
 ### Philosophy ###
+
+# Low understanding of philosophy cohort
 Philos_subset_Low <- TSR_data[TSR_data$GoodunderstandingofPhilosophy < 3 & TSR_data$GoodunderstandingofPhilosophy != 0, ]
 
+# High understanding of philosophy cohort
 Philos_subset_High <- TSR_data[TSR_data$GoodunderstandingofPhilosophy > 3, ]
 
 ## Theology Knowledge
