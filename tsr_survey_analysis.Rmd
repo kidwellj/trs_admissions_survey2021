@@ -16,6 +16,7 @@ library(RColorBrewer)
 library("stringr")    # Load stringr package, used for wrapping label text in plots
 library(dplyr)        # Used for filtering below
 library(scales)       # Used for adding percentages to bar charts
+library(kable)        # Used for generating markdown tables
 
 # Define colour palettes for plots below
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
@@ -234,6 +235,8 @@ Employability_data <- TSR_data[, 30:41]
 ```{r Visualization for 4 Key Subjects}
 ## Subset by "Positive" / "Negative"
 
+# jk note: I've filled in the other fields just for fun
+
 keysubjects_data <- subject_data[subject_data$Subject == "Philosophy" | subject_data$Subject == "Ethics" | subject_data$Subject == "Theology" | subject_data$Subject == "Religious Studies" | subject_data$Subject == "Sociology" | subject_data$Subject == "Psychology" | subject_data$Subject == "History" | subject_data$Subject == "Politics" | subject_data$Subject == "English" | subject_data$Subject == "Math" | subject_data$Subject == "Computer Science" | subject_data$Subject == "Business", ]
 
 recode_interest <- ifelse(2 <= keysubjects_data$Interest & keysubjects_data$Interest >=4, "Positive", "Negative")
@@ -320,6 +323,13 @@ write.csv(interest_table, "derivedData/interest_table.csv", row.names=TRUE)
 ## Mean Interest in Theology and Religious Studies by High/Low Subject Interest
 
 ```{r Philosophy}
+# Base mean:
+
+mean(as.numeric(TSR_data$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(TSR_data$InterestedinstudyingReligiousStudies), na.rm = TRUE)
+mean(as.numeric(TSR_data$InterestinstudyingPhilosophy), na.rm = TRUE)
+mean(as.numeric(TSR_data$InterestedinStudyingPsychology), na.rm = TRUE)
+
 ### Philosophy ###
 Philos_subset_Low <- TSR_data[TSR_data$InterestinstudyingPhilosophy < 3 & TSR_data$InterestinstudyingPhilosophy != 0, ]
 
@@ -329,7 +339,7 @@ Philos_subset_High <- TSR_data[TSR_data$InterestinstudyingPhilosophy > 3, ]
 #Low interest in Philosophy
 mean(as.numeric(Philos_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Philosophy
-mean(as.numeric(Philos_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Philos_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Philosophy
@@ -346,9 +356,9 @@ Soc_subset_High <- TSR_data[TSR_data$InterestinstudyingSociaology > 3, ]
 
 ## Theology Interest
 #Low interest in Sociology
-lSocTheo <- mean(as.numeric(Soc_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Soc_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Sociology
-hSocTheo <- mean(as.numeric(Soc_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Soc_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Sociology
@@ -367,7 +377,7 @@ Psych_subset_High <- TSR_data[TSR_data$InterestedinStudyingPsychology > 3, ]
 #Low interest in Psychology
 mean(as.numeric(Psych_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Psychology
-mean(as.numeric(Psych_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Psych_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Psychology
@@ -386,7 +396,7 @@ Hist_subset_High <- TSR_data[TSR_data$InterestedinstudyingHistory > 3, ]
 #Low interest in History
 mean(as.numeric(Hist_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in History
-mean(as.numeric(Hist_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Hist_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in History
@@ -405,7 +415,7 @@ Ethics_subset_High <- TSR_data[TSR_data$InterestedinstudyingEthics > 3, ]
 #Low interest in Ethics
 mean(as.numeric(Ethics_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Ethics
-mean(as.numeric(Ethics_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Ethics_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Ethics
@@ -424,7 +434,7 @@ Polit_subset_High <- TSR_data[TSR_data$InterestedinstudyingPolitics > 3, ]
 #Low interest in Politics
 mean(as.numeric(Polit_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Politics
-mean(as.numeric(Polit_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Polit_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Politics
@@ -443,7 +453,7 @@ Eng_subset_High <- TSR_data[TSR_data$InterestedinstudyingEnglish > 3, ]
 #Low interest in English
 mean(as.numeric(Eng_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in English
-mean(as.numeric(Eng_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Eng_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in English
@@ -454,7 +464,7 @@ mean(as.numeric(Eng_subset_High$InterestedinstudyingReligiousStudies), na.rm = T
 
 ```{r Math}
 ### Math ###
-Math_subset_Low <- TSR_data[TSR_data$InterestedinstudyingMath < 3 & TSR_data$InterestedinstudyingMathy != 0, ]
+Math_subset_Low <- TSR_data[TSR_data$InterestedinstudyingMath < 3 & TSR_data$InterestedinstudyingMath != 0, ]
 
 Math_subset_High <- TSR_data[TSR_data$InterestedinstudyingMath > 3, ]
 
@@ -462,7 +472,7 @@ Math_subset_High <- TSR_data[TSR_data$InterestedinstudyingMath > 3, ]
 #Low interest in Math
 mean(as.numeric(Math_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Math
-mean(as.numeric(Math_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Math_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Math
@@ -481,7 +491,7 @@ CompSci_subset_High <- TSR_data[TSR_data$InterestedinstudyingComputerScience > 3
 #Low interest in Computer Science
 mean(as.numeric(CompSci_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Computer Science
-mean(as.numeric(CompSci_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(CompSci_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Computer Science
@@ -500,7 +510,7 @@ Busi_subset_High <- TSR_data[TSR_data$InterestedinstudyingBusiness > 3, ]
 #Low interest in Business
 mean(as.numeric(Busi_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
 #High interest in Business
-mean(as.numeric(Busi_subset_Low$InterestedinstudyingTheology), na.rm = TRUE)
+mean(as.numeric(Busi_subset_High$InterestedinstudyingTheology), na.rm = TRUE)
 
 ## Religious Studies Interest
 #Low interest in Business
@@ -514,6 +524,15 @@ mean(as.numeric(Busi_subset_High$InterestedinstudyingReligiousStudies), na.rm = 
 ## Mean Knowledge in Theology and Religious Studies by High/Low Subject Knowledge
 
 ```{r Philosophy}
+# Base calculations
+
+mean(as.numeric(TSR_data$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(TSR_data$GoodunderstandingofReligiousStudies), na.rm = TRUE)
+mean(as.numeric(TSR_data$GoodunderstandingofPhilosophy), na.rm = TRUE)
+mean(as.numeric(TSR_data$GoodunderstandingofPsychology), na.rm = TRUE)
+mean(as.numeric(TSR_data$GoodunderstandingofEnglish), na.rm = TRUE)
+mean(as.numeric(TSR_data$GoodunderstandingofMath), na.rm = TRUE)
+
 ### Philosophy ###
 
 # Low understanding of philosophy cohort
@@ -526,7 +545,7 @@ Philos_subset_High <- TSR_data[TSR_data$GoodunderstandingofPhilosophy > 3, ]
 #Low knowledge in Philosophy
 mean(as.numeric(Philos_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Philosophy
-mean(as.numeric(Philos_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Philos_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies Knowledge
 #Low knowledge in Philosophy
@@ -545,7 +564,7 @@ Soc_subset_High <- TSR_data[TSR_data$GoodunderstandingofSociology > 3, ]
 #Low knowledge in Sociology
 mean(as.numeric(Soc_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Sociology
-mean(as.numeric(Soc_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Soc_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Sociology
@@ -564,7 +583,7 @@ Psych_subset_High <- TSR_data[TSR_data$GoodunderstandingofPsychology > 3, ]
 #Low knowledge in Psychology
 mean(as.numeric(Psych_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Psychology
-mean(as.numeric(Psych_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Psych_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Psychology
@@ -583,7 +602,7 @@ Hist_subset_High <- TSR_data[TSR_data$GoodunderstandingofHistory > 3, ]
 #Low knowledge in History
 mean(as.numeric(Hist_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in History
-mean(as.numeric(Hist_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Hist_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in History
@@ -602,7 +621,7 @@ Ethics_subset_High <- TSR_data[TSR_data$GoodunderstandingofEthics > 3, ]
 #Low knowledge in Ethics
 mean(as.numeric(Ethics_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Ethics
-mean(as.numeric(Ethics_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Ethics_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Ethics
@@ -621,7 +640,7 @@ Polit_subset_High <- TSR_data[TSR_data$GoodunderstandingofPolitics > 3, ]
 #Low knowledge in Politics
 mean(as.numeric(Polit_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Politics
-mean(as.numeric(Polit_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Polit_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Politics
@@ -640,7 +659,7 @@ Eng_subset_High <- TSR_data[TSR_data$GoodunderstandingofEnglish > 3, ]
 #Low knowledge in English
 mean(as.numeric(Eng_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in English
-mean(as.numeric(Eng_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Eng_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in English
@@ -659,7 +678,7 @@ Math_subset_High <- TSR_data[TSR_data$GoodunderstandingofMath > 3, ]
 #Low knowledge in Math
 mean(as.numeric(Math_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Math
-mean(as.numeric(Math_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Math_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Math
@@ -678,7 +697,7 @@ CompSci_subset_High <- TSR_data[TSR_data$GoodunderstandingofComputerScience > 3,
 #Low knowledge in Computer Science
 mean(as.numeric(CompSci_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Computer Science
-mean(as.numeric(CompSci_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(CompSci_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Computer Science
@@ -697,7 +716,7 @@ Busi_subset_High <- TSR_data[TSR_data$GoodunderstandingofBusiness > 3, ]
 #Low knowledge in Business
 mean(as.numeric(Busi_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
 #High knowledge in Business
-mean(as.numeric(Busi_subset_Low$GoodunderstandingofTheology), na.rm = TRUE)
+mean(as.numeric(Busi_subset_High$GoodunderstandingofTheology), na.rm = TRUE)
 
 ## Religious Studies knowledge
 #Low knowledge in Business
@@ -711,6 +730,17 @@ mean(as.numeric(Busi_subset_High$GoodunderstandingofReligiousStudies), na.rm = T
 ## Mean Employability in Theology and Religious Studies by High/Low Subject Employability
 
 ```{r Philosophy}
+# Base Calculations
+
+mean(as.numeric(TSR_data$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$ReligiousStudiesemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$Philosophyemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$PsychologyEmployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$Englishemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$Mathemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$Businessemployability), na.rm = TRUE)
+mean(as.numeric(TSR_data$ComputerScienceemployability), na.rm = TRUE)
+
 ### Philosophy ###
 Philos_subset_Low <- TSR_data[TSR_data$Philosophyemployability < 3 & TSR_data$Philosophyemployability != 0, ]
 
@@ -720,7 +750,7 @@ Philos_subset_High <- TSR_data[TSR_data$Philosophyemployability > 3, ]
 #Low employability in Philosophy
 mean(as.numeric(Philos_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Philosophy
-mean(as.numeric(Philos_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Philos_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Philosophy
@@ -739,7 +769,7 @@ Soc_subset_High <- TSR_data[TSR_data$Sociologyemployability > 3, ]
 #Low employability in Sociology
 mean(as.numeric(Soc_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Sociology
-mean(as.numeric(Soc_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Soc_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Sociology
@@ -758,7 +788,7 @@ Psych_subset_High <- TSR_data[TSR_data$PsychologyEmployability > 3, ]
 #Low employability in Psychology
 mean(as.numeric(Psych_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Psychology
-mean(as.numeric(Psych_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Psych_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Psychology
@@ -777,7 +807,7 @@ Hist_subset_High <- TSR_data[TSR_data$Historyemployability > 3, ]
 #Low employability in History
 mean(as.numeric(Hist_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in History
-mean(as.numeric(Hist_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Hist_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in History
@@ -796,7 +826,7 @@ Ethics_subset_High <- TSR_data[TSR_data$Ethicsemployability > 3, ]
 #Low employability in Ethics
 mean(as.numeric(Ethics_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Ethics
-mean(as.numeric(Ethics_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Ethics_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Ethics
@@ -815,7 +845,7 @@ Polit_subset_High <- TSR_data[TSR_data$Politicsemployability > 3, ]
 #Low employability in Politics
 mean(as.numeric(Polit_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Politics
-mean(as.numeric(Polit_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Polit_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Politics
@@ -834,7 +864,7 @@ Eng_subset_High <- TSR_data[TSR_data$Englishemployability > 3, ]
 #Low employability in English
 mean(as.numeric(Eng_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in English
-mean(as.numeric(Eng_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Eng_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in English
@@ -853,7 +883,7 @@ Math_subset_High <- TSR_data[TSR_data$Mathemployability > 3, ]
 #Low employability in Math
 mean(as.numeric(Math_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Math
-mean(as.numeric(Math_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Math_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Math
@@ -872,7 +902,7 @@ CompSci_subset_High <- TSR_data[TSR_data$ComputerScienceemployability > 3, ]
 #Low employability in Computer Science
 mean(as.numeric(CompSci_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Computer Science
-mean(as.numeric(CompSci_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(CompSci_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Computer Science
@@ -891,7 +921,7 @@ Busi_subset_High <- TSR_data[TSR_data$Businessemployability > 3, ]
 #Low employability in Business
 mean(as.numeric(Busi_subset_Low$Theologyemployability), na.rm = TRUE)
 #High employability in Business
-mean(as.numeric(Busi_subset_Low$Theologyemployability), na.rm = TRUE)
+mean(as.numeric(Busi_subset_High$Theologyemployability), na.rm = TRUE)
 
 ## Religious Studies employability
 #Low employability in Business
