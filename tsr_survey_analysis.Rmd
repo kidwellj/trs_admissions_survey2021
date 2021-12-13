@@ -16,7 +16,7 @@ library(RColorBrewer)
 library("stringr")    # Load stringr package, used for wrapping label text in plots
 library(dplyr)        # Used for filtering below
 library(scales)       # Used for adding percentages to bar charts
-library(kable)        # Used for generating markdown tables
+# library(kable)        # Used for generating markdown tables
 
 # Define colour palettes for plots below
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
@@ -25,9 +25,13 @@ TSR_data <- read.csv("./data/TSR data complete.csv")
 subject_data <- read.csv("./data/Subject data.csv")
 
 # Set up local workspace, as needed:
+
 if (dir.exists("data") == FALSE) {
   dir.create("data") 
 }
+
+# These paths are excluded from github as it is best practice for end-user to generate their own
+
 if (dir.exists("figures") == FALSE) {
   dir.create("figures") 
 }
@@ -109,9 +113,9 @@ TSR_data_rs_positive_summaries_ethnicity <- factor(TSR_data_rs_positive$Ethnicit
 
 TSR_data_rs_positive_summaries_ethnicity <- str_wrap(TSR_data_rs_positive_summaries_ethnicity, width = 30)
 
-TSR_data__theology_positive_summaries_gender <- factor(TSR_data_theology_positive$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
+TSR_data_theology_positive_summaries_gender <- factor(TSR_data_theology_positive$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
 # JK note: using stringr here to wrap axis titles
-TSR_data__theology_positive_summaries_gender <- str_wrap(TSR_data__theology_positive_summaries_gender, width = 10)
+TSR_data_theology_positive_summaries_gender <- str_wrap(TSR_data_theology_positive_summaries_gender, width = 10)
 
 TSR_data_rs_positive_summaries_gender <- factor(TSR_data_rs_positive$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
 # JK note: using stringr here to wrap axis titles
@@ -180,13 +184,8 @@ ggsave("figures/TSR_data_summaries_ethnicity3.png")
 	- visualisation as summaries for all subjects LIKERT data as stacked bar chart (colours for bar segments from cool to warm)
 	
 ```{r Visualization by Subject}
-### Each Subject is a different column so will need to figure out how to code the columns together into one graph
-  # Higher score indicates less agreement...need to reverse score
-
-## 1=5, 2=4, 3=3, 4=2, 5=1, 6=0 --- Not done yet. See what they look like without reverse scoring
 
 ## Files have been reverse scored - Higher score now indicates more agreement
-
 
 #Q5 Subject Knowledge/Understanding
 subject_data$Subject <- factor(subject_data$Subject, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), labels = c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business"))
@@ -216,17 +215,184 @@ employability_bar + labs(title = "please rate ... employability prospects", x = 
 # save to png file for reports
 ggsave("figures/TSR_data_subject_employability.png")
 
-### Categorical Graph ###
+### Likert Stacked Bar Chart ###
 
-#devtools::install_github('jbryer/likert')
-
-#likert_test <- likert(subject_data)
+# Take selection of data re: understanding
 Understanding_data <- TSR_data[, 6:17]
+# Convert each column to factors
+Understanding_data$GoodunderstandingofPhilosophy = factor(Understanding_data$GoodunderstandingofPhilosophy,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofSociology = factor(Understanding_data$GoodunderstandingofSociology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofPsychology = factor(Understanding_data$GoodunderstandingofPsychology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofHistory = factor(Understanding_data$GoodunderstandingofHistory,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofEthics = factor(Understanding_data$GoodunderstandingofEthics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofTheology = factor(Understanding_data$GoodunderstandingofTheology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofReligiousStudies = factor(Understanding_data$GoodunderstandingofReligiousStudies,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofPolitics = factor(Understanding_data$GoodunderstandingofPolitics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofEnglish = factor(Understanding_data$GoodunderstandingofEnglish,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofMath = factor(Understanding_data$GoodunderstandingofMath,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofComputerScience = factor(Understanding_data$GoodunderstandingofComputerScience,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofBusiness = factor(Understanding_data$GoodunderstandingofBusiness,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Understanding_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+str(Understanding_data)
+levels(Understanding_data)
+summary(Understanding_data)
 likert_test_understand <- likert(Understanding_data)
+plot(likert_test_understand)
+# save to png file for reports
+ggsave("figures/understanding_likert.png")
 
 Interest_data <- TSR_data[, 18:29]
+# Convert each column to factors
+Interest_data$InterestinstudyingPhilosophy = factor(Interest_data$InterestinstudyingPhilosophy,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestinstudyingSociaology = factor(Interest_data$InterestinstudyingSociaology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinStudyingPsychology = factor(Interest_data$InterestedinStudyingPsychology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingHistory = factor(Interest_data$InterestedinstudyingHistory,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingEthics = factor(Interest_data$InterestedinstudyingEthics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingTheology = factor(Interest_data$InterestedinstudyingTheology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingReligiousStudies = factor(Interest_data$InterestedinstudyingReligiousStudies,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingPolitics = factor(Interest_data$InterestedinstudyingPolitics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingEnglish = factor(Interest_data$InterestedinstudyingEnglish,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingMath = factor(Interest_data$InterestedinstudyingMath,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingComputerScience = factor(Interest_data$InterestedinstudyingComputerScience,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingBusiness = factor(Interest_data$InterestedinstudyingBusiness,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Interest_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+likert_test_interest <- likert(Interest_data)
+plot(likert_test_interest)
+# save to png file for reports
+ggsave("figures/interest_likert.png")
+
 
 Employability_data <- TSR_data[, 30:41]
+# Convert each column to factors
+Employability_data$Philosophyemployability = factor(Employability_data$Philosophyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Sociologyemployability = factor(Employability_data$Sociologyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$PsychologyEmployability = factor(Employability_data$PsychologyEmployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Historyemployability = factor(Employability_data$Historyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Ethicsemployability = factor(Employability_data$Ethicsemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Theologyemployability = factor(Employability_data$Theologyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$ReligiousStudiesemployability = factor(Employability_data$ReligiousStudiesemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Politicsemployability = factor(Employability_data$Politicsemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Englishemployability = factor(Employability_data$Englishemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Mathemployability = factor(Employability_data$Mathemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$ComputerScienceemployability = factor(Employability_data$ComputerScienceemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Businessemployability = factor(Employability_data$Businessemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Employability_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+likert_test_employability <- likert(Employability_data)
+plot(likert_test_employability)
+# save to png file for reports
+ggsave("figures/employability_likert.png")
+
 
 ```
 

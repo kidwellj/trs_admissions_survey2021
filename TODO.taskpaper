@@ -1,12 +1,12 @@
 # Prep work (JK):
-	- JK: aggregation of free-text answers: Q17, Q18 so that they can be used for subsetting
+	- JK: aggregation of free-text answers: Q17, Q18 so that they can be used for subsetting @done
 
 # Basic summary visualisations (RH):
-- Q2 (respondent age)
-- Q3 (year of study)
-- Q16 (gender identity)
-- Q17 (ethnic self-id)
-- Q18 (religion)
+- Q2 (respondent age) @done
+- Q3 (year of study) @done
+- Q16 (gender identity) @done
+- Q17 (ethnic self-id) @done
+- Q18 (religion) @done
 
 # Visualisations of LIKERT responses (RH):
 - For questions Q6 (subject interest) / Q5 (subject knowledge) / Q7 employability prospects: 
@@ -26,6 +26,13 @@
 	- Q18 responses
 	- Q17
 	- Q18
+
+# Dataset corrections:
+- typo in Interest_data$InterestinstudyingSociaology
+- adapt Interest_data$InterestedinStudyingPsychology to be consistent and others
+
+# Visualisation formatting:
+- Add colour to bar charts with colorbrewer()
 
 For later:
 - JK: calcuate baseline comparator using UCAS application data for Q5/6, stack with UOB application data for key subjects + 2-3 other samples
