@@ -13,9 +13,9 @@ library(likert)
 # Load RColorBrewer
 # install.packages("RColorBrewer")
 library(RColorBrewer)
-library("stringr")                   # Load stringr package, used for wrapping label text in plots
-library(dplyr)    # Used for filtering below
-library(scales) # Used for adding percentages to bar charts
+library("stringr")    # Load stringr package, used for wrapping label text in plots
+library(dplyr)        # Used for filtering below
+library(scales)       # Used for adding percentages to bar charts
 
 # Define colour palettes for plots below
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
@@ -23,7 +23,7 @@ coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palet
 TSR_data <- read.csv("./data/TSR data complete.csv")
 subject_data <- read.csv("./data/Subject data.csv")
 
-# Set up local workspace:
+# Set up local workspace, as needed:
 if (dir.exists("data") == FALSE) {
   dir.create("data") 
 }
@@ -100,6 +100,23 @@ TSR_data_rs_positive_summaries_religion <- factor(TSR_data_rs_positive$Religious
 
 TSR_data_rs_negative_summaries_religion <- factor(TSR_data_rs_negative$ReligiousAffliation, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19), labels = c("Agnostic", "Atheist", "Baha'i", "Buddhist", "Christian", "Confucian", "Jain", "Jewish", "Hindu", "Indigenous Traditional Religious", "Muslim", "Pagan", "Shinto", "Sikh", "Spiritual but not religious", "Zoroastrian", "No religion", "Prefer not to say", "Other"))
 
+TSR_data_theology_positive_summaries_ethnicity <- factor(TSR_data_theology_positive$Ethnicity, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19), labels = c("Arab", "Indian", "Pakistani", "Bangladeshi", "Chinese", "Any other Asian background", "Black - African", "Black - Caribbean", "Any other Black background", "Mixed - White and Black Caribbean", "Mixed - White and Black African", "Mixed - White and Black Asian", "Any other Mixed/Multiple Ethnic background", "White - British", "White - Irish", "Gypsy or Irish Traveller", "Any other White background", "Other Ethnic group", "Prefer not to say"))
+
+TSR_data_theology_positive_summaries_ethnicity <- str_wrap(TSR_data_theology_positive_summaries_ethnicity, width = 30)
+
+TSR_data_rs_positive_summaries_ethnicity <- factor(TSR_data_rs_positive$Ethnicity, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 ,18, 19), labels = c("Arab", "Indian", "Pakistani", "Bangladeshi", "Chinese", "Any other Asian background", "Black - African", "Black - Caribbean", "Any other Black background", "Mixed - White and Black Caribbean", "Mixed - White and Black African", "Mixed - White and Black Asian", "Any other Mixed/Multiple Ethnic background", "White - British", "White - Irish", "Gypsy or Irish Traveller", "Any other White background", "Other Ethnic group", "Prefer not to say"))
+
+TSR_data_rs_positive_summaries_ethnicity <- str_wrap(TSR_data_rs_positive_summaries_ethnicity, width = 30)
+
+TSR_data__theology_positive_summaries_gender <- factor(TSR_data_theology_positive$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
+# JK note: using stringr here to wrap axis titles
+TSR_data__theology_positive_summaries_gender <- str_wrap(TSR_data__theology_positive_summaries_gender, width = 10)
+
+TSR_data_rs_positive_summaries_gender <- factor(TSR_data_rs_positive$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
+# JK note: using stringr here to wrap axis titles
+TSR_data_rs_positive_summaries_gender <- str_wrap(TSR_data_rs_positive_summaries_gender, width = 10)
+
+
 # Calculate graphs
 
 Religious_affiliation_bar <- ggplot(TSR_data, aes(TSR_data_summaries_religion)) + geom_bar() + coord_flip()
@@ -109,7 +126,7 @@ ggsave("figures/TSR_data_summaries_religion.png")
 
 # Additional graphs for theology/rs positive sentiment cohorts
 
-# Theology
+# Theology - religious identification 
 
 # JK note: need to add percentages to each line, as per https://stackoverflow.com/questions/52373049/display-percentage-on-ggplot-bar-chart-in-r
 
@@ -125,14 +142,36 @@ Religious_affiliation_bar3 + labs(title = "Respondent religious self-identificat
 # save to png file for reports
 ggsave("figures/TSR_data_summaries_religion_rspositive.png")
 
-irisNew <- iris %>% group_by(Species) %>% 
- summarize(count = n()) %>%  # count records by species
- mutate(pct = count/sum(count))  # find percent of total
+# Theology positive - gender 
 
-ggplot(irisNew, aes(Species, pct, fill = Species)) + 
-  geom_bar(stat='identity') + 
-  geom_text(aes(label=scales::percent(pct)), position = position_stack(vjust = .5))+
-  scale_y_continuous(labels = scales::percent)
+gender_bar2 <- ggplot(TSR_data_theology_positive, aes(TSR_data_theology_positive_summaries_gender)) + geom_bar()
+gender_bar2 + labs(title = "Respondent gender self-identification, theology positive", x = "", y = "")
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_gender2.png")
+
+# Religion positive - gender
+
+gender_bar3 <- ggplot(TSR_data_rs_positive, aes(TSR_data_rs_positive_summaries_gender)) + geom_bar()
+gender_bar3 + labs(title = "Respondent gender self-identification, rs positive", x = "", y = "")
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_gender3.png")
+
+# Theology positive - ethnicity
+
+data_summaries_theology_positive_ethnicity <- ggplot(TSR_data_theology_positive, aes(TSR_data_theology_positive_summaries_ethnicity)) + geom_bar() +  xlab(NULL) + coord_flip()
+data_summaries_theology_positive_ethnicity + labs(title = "Respondent ethnic self-identification - theology positive", x = "", y = "")
+
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_ethnicity2.png")
+
+# Religion positive - ethnicity
+
+data_summaries_rs_positive_ethnicity <- ggplot(TSR_data_rs_positive, aes(TSR_data_rs_positive_summaries_ethnicity)) + geom_bar() +  xlab(NULL) + coord_flip()
+data_summaries_ethnicity + labs(title = "Respondent ethnic self-identification - religion positive", x = "", y = "")
+
+# save to png file for reports
+ggsave("figures/TSR_data_summaries_ethnicity3.png")
+
 ```
 
 # Visualisations of LIKERT responses (RH):
