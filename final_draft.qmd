@@ -6,19 +6,19 @@ editor: visual
 ---
 
 ```{r setup}
-library(ggplot2)
-library(usethis)
-library(devtools)
-library(likert)
-library(RColorBrewer)
-library("readxl")
-library(haven)
-library(scales)
-library(tidyverse)
-library(likert)
-library(data.table)
-library(formattable)
-library(corrplot)
+library(here)  |> suppressPackageStartupMessages()
+library(ggplot2)  |> suppressPackageStartupMessages()
+library(usethis)  |> suppressPackageStartupMessages()
+library(devtools)  |> suppressPackageStartupMessages()
+library(likert)  |> suppressPackageStartupMessages()
+library(RColorBrewer)  |> suppressPackageStartupMessages()
+library("readxl")  |> suppressPackageStartupMessages()
+library(haven)  |> suppressPackageStartupMessages()
+library(scales)  |> suppressPackageStartupMessages()
+library(tidyverse)  |> suppressPackageStartupMessages()
+library(data.table)  |> suppressPackageStartupMessages()
+library(formattable)  |> suppressPackageStartupMessages()
+library(corrplot)  |> suppressPackageStartupMessages()
 
 # Set a few color variables to make our table more visually appealing
 customGreen0 = "#DeF7E9"
@@ -26,9 +26,15 @@ customGreen = "#71CA97"
 customRed = "#ff7f7f"
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette
 
-subject_data <- read.csv("./data/Subject data.csv")
-admissions_data <- read_excel("./data/TSR_data_numbers.xlsx", sheet = "Raw data - completes")
-admissions_data_numeric <- read_excel("./data/TSR_data_numbers.xlsx", sheet = "Raw data - completes")
+# Download dataset from zenodo
+if (file.exists(here("data", "survey_raw_data.xlsx")) == FALSE) {
+download.file("https://zenodo.org/records/10673332/files/survey_raw_data.xlsx?download=1", destfile = "data/survey_raw_data.xlsx")
+}
+
+# Read in datasets as dataframes
+admissions_data <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
+# Preserve a second dataframe as numeric without factoring, for the sake of cor() later
+admissions_data_numeric <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
 admissions_data_numeric <- select(admissions_data_numeric, -c(Q17_other, Q18_other))
 TSR_data <- read.csv("./data/TSR data complete.csv") # From analysis in 2021
 
@@ -116,6 +122,7 @@ admissions_data$Q17 <- labelled(admissions_data$Q17, c("Arab"=1, "Indian"=2, "Pa
 
 admissions_data$Q18 <- labelled(admissions_data$Q18, c("Agnostic"=1, "Atheist"=2, "Baha'i"=3, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Indigenous Traditional Religious"=10, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18, "Prefer not to say"=0), label = "What is your religion?")
 ```
+
 ```{r bins and subsetting}
 
 # For Q5 - understanding
@@ -290,8 +297,6 @@ ggplot(admissions_data, aes(factor(Q16))) +
   labs(title = "Respondent Gender Self-Identification Distribution", x = "Gender", y = "") + scale_x_discrete(labels = labels(q16_labels))
 ```
 
-
-
 ```{r ethnicity}
 q17_labels <- c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=5, "Any other Asian background"=6, "Black - African"=7, "Black - Caribbean"=8, "Any other Black background"=9, "Mixed - White and Black Caribbean"=10, "Mixed - White and Black African"=11, "Mixed - White and Black Asian"=12, "Any other Mixed/Multiple Ethnic background"=13, "White - British"=14, "White - Irish"=15, "Any other White background"=16, "Prefer not to say"=17, "Other"=18)
 
@@ -301,7 +306,6 @@ ggplot(admissions_data, aes(factor(Q17))) +
   labs(title = "Respondent Ethnicity", x = "Ethnicity", y = "") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) + scale_x_discrete(labels = labels(q17_labels))
 ```
-
 
 ```{r religion}
 
@@ -379,6 +383,7 @@ names(Understanding_data) <- c("Philosophy", "Sociology", "Psychology", "History
 likert_test_understand <- likert(Understanding_data)
 plot(likert_test_understand)
 ```
+
 We've plotted these results as a diverging bar chart centred on neutral responses, so that negative and positive visually diverge in clear ways. The bottom four subjects represent those where respondents were on average, less confident that they understood what study of the subject might involve. It is perhaps not surprising to see that subjects which are universally studied in school like "math," "english" and "history" were considered well-understood. It is interesting to note, however, that while respondents were confident that they knew what "Religious Studies" involved (60% were "strongly agree" or "agree"), these results were inverted (63% and 22%), almost perfectly for "Theology". However, it is important to note that - as we will go on to observe - a lack of understanding did *not* correlate to a lack of interest in studying a subject.
 
 ## Employability prospects
@@ -441,6 +446,7 @@ plot(likert_test_employability)
 # save to png file for reports
 ggsave("figures/employability_likert.png")
 ```
+
 When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
 ```{r correlation plot for employability and interest}
@@ -455,7 +461,6 @@ M <- cor(Q6, Q7, use = "complete.obs")
 
 corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
 ```
-
 
 ## Interest in subjects
 
@@ -521,6 +526,7 @@ When it came to interest in studying the subject at University, responses were l
 It is also interesting to note that no subject exceeded more than 50% interest among survey responses, indicating that there may be be a single "average student", but a variety of interest profiles or clusters among prospective students and not a clear leader among all respondents. We do find that three of the top four "understood" subjects remain in the upper half. However, it is interesting to note that they shift ordering to some extent, with Psychology as a clear leader. Further still, one of the least understood subjects "sociology" shifts from rank 9 to rank 4 for interest.
 
 We can generate a correlation matrix to assess whether interest in one subject correlated to others:
+
 ```{r subject interest correlation matrix}
 Q6 <- admissions_data_numeric %>%
   select(starts_with("Q6"))
@@ -532,6 +538,7 @@ corrplot(Q6_correlation_matrix, method = "number", type = "upper",
          col = colorRampPalette(c("blue", "red"))(9),
          order = "FPC", hclust.method = "ward.D2")
 ```
+
 We can see that there are several reasonably strong positive correlations and these are all clustered around TRS, ethics and philosophy with the exception of the strong correlation between interest in computer science and math. For interest in theology, the strongest correlations are with interest in religious studies (ρ0.62) ethics (ρ0.60) and philosophy (ρ0.57). For interest in religious studies, the strongest correlations are with interest in the same subjects, albeit with slightly lower correlations: these are theology (ρ0.62), ethics (ρ0.56) and philosophy (ρ0.54).
 
 We will explore further Further research would be helpful in identifying the significance of these associations in the next section. It is interesting to compare the results above subsetting data based on whether a given pupil has or has not taken RE as a GCSE subject. Responses to this question (Q14) were split fairly evenly among our respondents with 493 responding "yes" and 432 "no". The differences here are striking:
@@ -548,7 +555,8 @@ corrplot(Q6_correlation_matrix, method = "number", type = "upper",
          col = colorRampPalette(c("blue", "red"))(9),
          order = "FPC", hclust.method = "ward.D2")
 ```
-One should be careful not to confuse correlation here with causation, as it is possible that the students who self-select to participate in RE GCSE bring a certain orientation, and not necessarily that their coursework alters their understanding of the subject composition. Nonetheless, we note that while some correlations remain relatively stable across the two cohorts, for example, relating philosophy and ethics, the salience of the relationship between several subjects for this subset of respondents loosens substantially. This includes the relationship between interest in religious studies and theology which drops to ) as well as theology and ethics (). 
+
+One should be careful not to confuse correlation here with causation, as it is possible that the students who self-select to participate in RE GCSE bring a certain orientation, and not necessarily that their coursework alters their understanding of the subject composition. Nonetheless, we note that while some correlations remain relatively stable across the two cohorts, for example, relating philosophy and ethics, the salience of the relationship between several subjects for this subset of respondents loosens substantially. This includes the relationship between interest in religious studies and theology which drops to ) as well as theology and ethics ().
 
 ```{r}
 Q6_yes_GCSE <- admissions_data_numeric %>%
@@ -562,7 +570,8 @@ corrplot(Q6_correlation_matrix, method = "number", type = "upper",
          col = colorRampPalette(c("blue", "red"))(9),
          order = "FPC", hclust.method = "ward.D2")
 ```
-Looking at the subset of pupils who indicate they have taken RE GCSE, there emerge some novel correlations, between theology and 
+
+Looking at the subset of pupils who indicate they have taken RE GCSE, there emerge some novel correlations, between theology and
 
 We can also analyse for the strength of correlations for students who identify as religious.
 
@@ -585,40 +594,14 @@ We also asked respondents to indicate what they think the study of theology and 
 
 Responses to the question about what "a theology degree would include" were as follows:
 
-Philosophy - 74%
-Ethics - 70%
-History - 48%
-Literature - 42%
-Textual studies - 40%
-Sociology - 37%
-Psychology - 26%
-Politics - 24%
-Law - 20%
-Arts - 18%
-Archaeology - 18%
-Science - 13%
-Economics - 4%
+Philosophy - 74% Ethics - 70% History - 48% Literature - 42% Textual studies - 40% Sociology - 37% Psychology - 26% Politics - 24% Law - 20% Arts - 18% Archaeology - 18% Science - 13% Economics - 4%
 
 Responses to what respondents thought a "religious studies degree would include" varied slightly:
 
-Ethics - 84%
-Philosophy - 81%
-History - 67%
-Textual studies - 47%
-Literature - 43%
-Sociology - 42%
-Politics - 34%
-Law - 26%
-Psychology - 22%
-Arts - 17%
-Archaeology - 16%
-Science - 15%
-Economics - 4%
-
+Ethics - 84% Philosophy - 81% History - 67% Textual studies - 47% Literature - 43% Sociology - 42% Politics - 34% Law - 26% Psychology - 22% Arts - 17% Archaeology - 16% Science - 15% Economics - 4%
 
 ```{r}
 ```
-
 
 # Analysis
 
@@ -628,7 +611,7 @@ Particularly with respect to the TRS focus of this study, it is important to emp
 
 ## Comparing Theology and Religious Studies
 
-For the sake of this analysis, we are particularly interested in the similar responses for religious studies and theology. In spite of sharp differences in how well the cohort thought they understood the subjects, they achieve a very similar rank for interest. Subsetting the responses also reveals some surprising trends in the data. 
+For the sake of this analysis, we are particularly interested in the similar responses for religious studies and theology. In spite of sharp differences in how well the cohort thought they understood the subjects, they achieve a very similar rank for interest. Subsetting the responses also reveals some surprising trends in the data.
 
 There were a number of asymmetrical responses with 43 respondents marking Agree or Strongly Agree in one column and Disagree or Strongly Disagree in the other. In this case, around 21% (25 total of 116) of positive responses to this question on "Religious Studies" as a subject had a dichotomous, or confidently negative sentiment with regard to studying "Theology". Similarly, around 22% (24 total of 107) of positive responses to this question on "Theology" had a confidently negative response with regard to "Religious Studies". However, in all cases where a respondent marked that they "Strongly Agree" with regard to the study of theology they had a positive or ambiguous ("Neither/Nor" or "Prefer not to answer") response to Religious Studies. The opposite ("Strongly Agree" on "Religious Studies" and a negative sentiment towards "Theology") was only the case for 7 responses out of a total of nearly 1000. We take this to indicate that sentiments towards theology and religious studies do not dichotomise in straight-forward ways. Many of our respondents had overlapping, if asymetrical interest in both. We would recommend further qualitative research to develop some more nuanced and in-depth tests for the perceptions of prospective University students towards these two themes alongside others such as "spirituality" or specific religious traditions (e.g. Islam, Judaism, Sikhism, etc.).
 
@@ -640,7 +623,7 @@ Only 7% of students who took the survey indicated "Yes" to the question "Are you
 
 Positive sentiments also did not correlate in significant ways to participation in an organised religion. When data was filtered to select students who marked "Agnostic", "Atheist", " Spiritual but not religious" or "No Religion", the proportion of students who indicated participation/intention to participate in A-Level RS did not change, nor was there a significant overall change to the proportion of students who marked "Agree" or "Strongly Agree" to the statement "I would be interested in studying this subject at University".
 
-Negative responses for "theology" do not correlate in easily perceptible ways to religious identity. Prospective students who marked "Atheist" (68%) and "No religion" (77%) were likely to indicate disagreement, but so were Hindu (71%), Muslim (65%) and Pagan (71%) students. Lower, but still significant Disagree/Strongly Disagree responses were also the case for "Spiritual but not religious" (53%), "Christian" (55%) and "Agnostic" (55%) students. 
+Negative responses for "theology" do not correlate in easily perceptible ways to religious identity. Prospective students who marked "Atheist" (68%) and "No religion" (77%) were likely to indicate disagreement, but so were Hindu (71%), Muslim (65%) and Pagan (71%) students. Lower, but still significant Disagree/Strongly Disagree responses were also the case for "Spiritual but not religious" (53%), "Christian" (55%) and "Agnostic" (55%) students.
 
 ```{r}
 Q5_religious_cor_matrix <- cor(admissions_data_numeric[, grep("^Q5", colnames(admissions_data_numeric))], admissions_data_numeric$religion_bin, use = "complete.obs")
@@ -657,7 +640,7 @@ str(Q6_religious_cor_matrix)
 
 ## Some observations regarding mystique
 
-It was particularly interesting to note that there is positive interest in studying Theology in spite of the lack of understanding of what that study involves. Further research would be necessary to judge the meaning of this discovery, e.g. whether interest numbers would be increased, unaffected or lessened if the level of "unknowing" or conversely the "mystique" of the subject were reduced. For the sake of this study, we can explore the data to a certain extent in an attempt to ascertain whether the "mystique" factor is significant. 
+It was particularly interesting to note that there is positive interest in studying Theology in spite of the lack of understanding of what that study involves. Further research would be necessary to judge the meaning of this discovery, e.g. whether interest numbers would be increased, unaffected or lessened if the level of "unknowing" or conversely the "mystique" of the subject were reduced. For the sake of this study, we can explore the data to a certain extent in an attempt to ascertain whether the "mystique" factor is significant.
 
 If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE)`. Bearing in mind that higher response codes in this dataset indicated a more negative response (strongly disagree was coded as 5 whereas strongly agree was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE)` for neutral responses on understanding and a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
@@ -670,6 +653,7 @@ Q6 <- admissions_data_numeric %>%
 M <- cor(Q6, Q5, use = "complete.obs")
 corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
 ```
+
 Here, the least weak correlation (between interest and understanding of computer science) is just over 0.5, and even this correlation should be considered weak at best.
 
 ```{r}
@@ -683,9 +667,6 @@ admissions_data[understanding_theology_bin == "high", mean(Q6_Theology, na.rm = 
 
 ```
 
-
-
-
 ```{r}
 q6 <- c(data1[18:29])
 q7 <- c(data1[29:40])
@@ -694,6 +675,5 @@ q11 <- c(data1[57:70])
 q12 <- c(data1[71:80])
 
 ```
-
 
 # Appendix A: Instrument
