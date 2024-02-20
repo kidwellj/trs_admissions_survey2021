@@ -25,19 +25,7 @@ customGreen0 = "#DeF7E9"
 customGreen = "#71CA97"
 customRed = "#ff7f7f"
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette
-
-# Download dataset from zenodo
-if (file.exists(here("data", "survey_raw_data.xlsx")) == FALSE) {
-download.file("https://zenodo.org/records/10673332/files/survey_raw_data.xlsx?download=1", destfile = "data/survey_raw_data.xlsx")
-}
-
-# Read in datasets as dataframes
-admissions_data <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
-# Preserve a second dataframe as numeric without factoring, for the sake of cor() later
-admissions_data_numeric <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
-admissions_data_numeric <- select(admissions_data_numeric, -c(Q17_other, Q18_other))
-TSR_data <- read.csv("./data/TSR data complete.csv") # From analysis in 2021
-
+corr_plot_scheme <- brewer.pal(3, "PuOr")
 # Set up local workspace, as needed:
 
 if (dir.exists("data") == FALSE) {
@@ -52,6 +40,17 @@ if (dir.exists("figures") == FALSE) {
 if (dir.exists("derivedData") == FALSE) {
   dir.create("derivedData")
 }
+
+# Download dataset from zenodo
+if (file.exists(here("data", "survey_raw_data.xlsx")) == FALSE) {
+download.file("https://zenodo.org/records/10673332/files/survey_raw_data.xlsx?download=1", destfile = "data/survey_raw_data.xlsx")
+}
+
+# Read in datasets as dataframes
+admissions_data <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
+# Preserve a second dataframe as numeric without factoring, for the sake of cor() later
+admissions_data_numeric <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
+admissions_data_numeric <- select(admissions_data_numeric, -c(Q17_other, Q18_other))
 ```
 
 ```{r refactoring}
@@ -281,9 +280,6 @@ ggplot(admissions_data, aes(factor(Q2))) +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
   labs(title = "Respondent Age Distribution", x = "Age", y = "") +
   scale_x_discrete(labels = labels(q2_labels))
-
-# save to png file for reports
-ggsave("figures/admissions_data_summaries_age.png")
 ```
 
 We also asked respondents to self-identify their gender, ethnic group and religion. Distribution across these categories was as follows:
@@ -294,7 +290,9 @@ q16_labels <- c("Male"=1, "Female"=2, "I identify my gender in another way"=3, "
 ggplot(admissions_data, aes(factor(Q16))) + 
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
-  labs(title = "Respondent Gender Self-Identification Distribution", x = "Gender", y = "") + scale_x_discrete(labels = labels(q16_labels))
+  labs(title = "Respondent Gender Self-Identification Distribution", x = "Gender", y = "") +
+  scale_x_discrete(labels = labels(q16_labels)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10))
 ```
 
 ```{r ethnicity}
@@ -327,61 +325,24 @@ We asked our respondents to tell us about their attitudes towards a variety of s
 ## Understanding of subjects
 
 ```{r understanding}
-# Take selection of data re: understanding
-Understanding_data <- TSR_data[, 6:17]
-# Convert each column to factors
-Understanding_data$GoodunderstandingofPhilosophy = factor(Understanding_data$GoodunderstandingofPhilosophy,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofSociology = factor(Understanding_data$GoodunderstandingofSociology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofPsychology = factor(Understanding_data$GoodunderstandingofPsychology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofHistory = factor(Understanding_data$GoodunderstandingofHistory,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofEthics = factor(Understanding_data$GoodunderstandingofEthics,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofTheology = factor(Understanding_data$GoodunderstandingofTheology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofReligiousStudies = factor(Understanding_data$GoodunderstandingofReligiousStudies,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofPolitics = factor(Understanding_data$GoodunderstandingofPolitics,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofEnglish = factor(Understanding_data$GoodunderstandingofEnglish,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofMath = factor(Understanding_data$GoodunderstandingofMath,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofComputerScience = factor(Understanding_data$GoodunderstandingofComputerScience,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Understanding_data$GoodunderstandingofBusiness = factor(Understanding_data$GoodunderstandingofBusiness,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-names(Understanding_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+Q5 <- admissions_data %>%
+  select(starts_with("Q5"))
 
-likert_test_understand <- likert(Understanding_data)
-plot(likert_test_understand)
+# We need to convert named vectors into factors for likert()
+for (col in names(Q5)) {
+  Q5[[col]] <- factor(Q5[[col]], levels = c(
+  "Strongly disagree" = 5,
+  "Disagree" = 4,
+  "Neither/Nor" = 3,
+  "Agree" = 2,
+  "Strongly agree" = 1))
+}
+
+# Likert() loves a good data frame
+Q5 <- as.data.frame(Q5)
+names(Q5) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+plot(likert(Q5))
 ```
 
 We've plotted these results as a diverging bar chart centred on neutral responses, so that negative and positive visually diverge in clear ways. The bottom four subjects represent those where respondents were on average, less confident that they understood what study of the subject might involve. It is perhaps not surprising to see that subjects which are universally studied in school like "math," "english" and "history" were considered well-understood. It is interesting to note, however, that while respondents were confident that they knew what "Religious Studies" involved (60% were "strongly agree" or "agree"), these results were inverted (63% and 22%), almost perfectly for "Theology". However, it is important to note that - as we will go on to observe - a lack of understanding did *not* correlate to a lack of interest in studying a subject.
@@ -389,62 +350,24 @@ We've plotted these results as a diverging bar chart centred on neutral response
 ## Employability prospects
 
 ```{r employability prospects}
-Employability_data <- TSR_data[, 30:41]
-# Convert each column to factors
-Employability_data$Philosophyemployability = factor(Employability_data$Philosophyemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Sociologyemployability = factor(Employability_data$Sociologyemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$PsychologyEmployability = factor(Employability_data$PsychologyEmployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Historyemployability = factor(Employability_data$Historyemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Ethicsemployability = factor(Employability_data$Ethicsemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Theologyemployability = factor(Employability_data$Theologyemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$ReligiousStudiesemployability = factor(Employability_data$ReligiousStudiesemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Politicsemployability = factor(Employability_data$Politicsemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Englishemployability = factor(Employability_data$Englishemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Mathemployability = factor(Employability_data$Mathemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$ComputerScienceemployability = factor(Employability_data$ComputerScienceemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Employability_data$Businessemployability = factor(Employability_data$Businessemployability,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-names(Employability_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+Q7 <- admissions_data %>%
+  select(starts_with("Q7"))
 
-likert_test_employability <- likert(Employability_data)
-plot(likert_test_employability)
-# save to png file for reports
-ggsave("figures/employability_likert.png")
+# We need to convert named vectors into factors for likert()
+for (col in names(Q7)) {
+  Q7[[col]] <- factor(Q7[[col]], levels = c(
+  "Strongly disagree" = 5,
+  "Disagree" = 4,
+  "Neither/Nor" = 3,
+  "Agree" = 2,
+  "Strongly agree" = 1))
+}
+
+# Likert() loves a good data frame
+Q7 <- as.data.frame(Q7)
+names(Q7) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+plot(likert(Q7))
 ```
 
 When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
@@ -459,66 +382,30 @@ Q7 <- admissions_data_numeric %>%
          
 M <- cor(Q6, Q7, use = "complete.obs")
 
-corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
+corrplot(M, method = 'number', number.cex = 0.5, col = corr_plot_scheme, tl.col = "black", order = 'hclust')
 ```
 
 ## Interest in subjects
 
 ```{r interest in studying}
-Interest_data <- TSR_data[, 18:29]
-# Convert each column to factors
-Interest_data$InterestinstudyingPhilosophy = factor(Interest_data$InterestinstudyingPhilosophy,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestinstudyingSociaology = factor(Interest_data$InterestinstudyingSociaology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinStudyingPsychology = factor(Interest_data$InterestedinStudyingPsychology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingHistory = factor(Interest_data$InterestedinstudyingHistory,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingEthics = factor(Interest_data$InterestedinstudyingEthics,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingTheology = factor(Interest_data$InterestedinstudyingTheology,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingReligiousStudies = factor(Interest_data$InterestedinstudyingReligiousStudies,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingPolitics = factor(Interest_data$InterestedinstudyingPolitics,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingEnglish = factor(Interest_data$InterestedinstudyingEnglish,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingMath = factor(Interest_data$InterestedinstudyingMath,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingComputerScience = factor(Interest_data$InterestedinstudyingComputerScience,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-Interest_data$InterestedinstudyingBusiness = factor(Interest_data$InterestedinstudyingBusiness,
-                       ordered = TRUE,
-                       levels = c("1", "2", "3", "4", "5")
-                       )
-names(Interest_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+Q6 <- admissions_data %>%
+  select(starts_with("Q6"))
 
-likert_test_interest <- likert(Interest_data)
-plot(likert_test_interest)
+# We need to convert named vectors into factors for likert()
+for (col in names(Q6)) {
+  Q6[[col]] <- factor(Q6[[col]], levels = c(
+  "Strongly disagree" = 5,
+  "Disagree" = 4,
+  "Neither/Nor" = 3,
+  "Agree" = 2,
+  "Strongly agree" = 1))
+}
+
+# Likert() loves a good data frame
+Q6 <- as.data.frame(Q6)
+names(Q6) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+plot(likert(Q6))
 ```
 
 When it came to interest in studying the subject at University, responses were loosely connected to understanding data. The connection to perception of employablity prospects was even less significant, with the clear winner, computer science, nearly inverting position on the chart from Q7 to Q6.
@@ -571,9 +458,9 @@ corrplot(Q6_correlation_matrix, method = "number", type = "upper",
          order = "FPC", hclust.method = "ward.D2")
 ```
 
-Looking at the subset of pupils who indicate they have taken RE GCSE, there emerge some novel correlations, between theology and
+Looking at the subset of pupils who indicate they have taken RE GCSE, we can see similar trends in the opposite direction.
 
-We can also analyse for the strength of correlations for students who identify as religious.
+We can also analyse for the strength of correlations for students who identify as religious:
 
 ```{r}
 Q6_yes_religious <- admissions_data_numeric %>%
@@ -588,36 +475,150 @@ corrplot(Q6_correlation_matrix, method = "number", type = "upper",
          order = "FPC", hclust.method = "ward.D2")
 ```
 
-## What does study include?
+## What does study of this subject include?
 
 We also asked respondents to indicate what they think the study of theology and religious studies includes in practice and this data can tease out some possible directions for interpreting correlations in the previous section.
 
 Responses to the question about what "a theology degree would include" were as follows:
 
-Philosophy - 74% Ethics - 70% History - 48% Literature - 42% Textual studies - 40% Sociology - 37% Psychology - 26% Politics - 24% Law - 20% Arts - 18% Archaeology - 18% Science - 13% Economics - 4%
+-   Philosophy - 74%
+
+-   Ethics - 70%
+
+-   History - 48%
+
+-   Literature - 42%
+
+-   Textual studies - 40%
+
+-   Sociology - 37%
+
+-   Psychology - 26%
+
+-   Politics - 24%
+
+-   Law - 20%
+
+-   Arts - 18%
+
+-   Archaeology - 18%
+
+-   Science - 13%
+
+-   Economics - 4%
 
 Responses to what respondents thought a "religious studies degree would include" varied slightly:
 
-Ethics - 84% Philosophy - 81% History - 67% Textual studies - 47% Literature - 43% Sociology - 42% Politics - 34% Law - 26% Psychology - 22% Arts - 17% Archaeology - 16% Science - 15% Economics - 4%
+-   Ethics - 84%
 
-```{r}
-```
+-   Philosophy - 81%
+
+-   History - 67%
+
+-   Textual studies - 47%
+
+-   Literature - 43%
+
+-   Sociology - 42%
+
+-   Politics - 34%
+
+-   Law - 26%
+
+-   Psychology - 22%
+
+-   Arts - 17%
+
+-   Archaeology - 16%
+
+-   Science - 15%
+
+-   Economics - 4%
 
 # Analysis
 
 ## Situating interest data
 
-Particularly with respect to the TRS focus of this study, it is important to emphasise that though a smaller number responded positively with relation to Theology and Religious Studies than the other proxy subjects included, these proportions for TRS significantly exceed actual applicant figures reported by UCAS programme enrollments. For 2019, UCAS reports 24,394 applications to Psychology UG programmes, 8,230 to History programmes, 8,285 to Math programmes (JACS group G), 1660 applications to Philosophy UG degree programmes, and 790 to TRS UG degree programmes. Seen in this way, we can assume that understanding and interest in a subject are not currently️ mapping in straight-forward ways onto applications for study at University.
+Particularly with respect to the TRS focus of this study, it is important to emphasise that though a smaller number responded positively with relation to Theology and Religious Studies than the other proxy subjects included in this study, these proportions for TRS significantly exceed comparative applicant figures reported by UCAS programme enrollments. For 2019, UCAS reports 24,394 applications to Psychology UG programmes, 8,230 to History programmes, 8,285 to Math programmes (JACS group G), 1660 applications to Philosophy UG degree programmes, and 790 to TRS UG degree programmes. That 790 is equivalent to just over 3% of psychology admissions, a sharp contrast to the 4:1 ratio shown above. Seen in this way, we may hypothesise that understanding and interest in a subject are not currently️ mapping in straight-forward ways onto applications for study at University with a variety of "dampening" factors at play.
 
 ## Comparing Theology and Religious Studies
 
-For the sake of this analysis, we are particularly interested in the similar responses for religious studies and theology. In spite of sharp differences in how well the cohort thought they understood the subjects, they achieve a very similar rank for interest. Subsetting the responses also reveals some surprising trends in the data.
+While some scholars in TRS have drawn a sharp contrast between the two subjects of theology and religious studies, we sought to test this assumption in this study, assessing whether it is in play for prospective satudents. As shown above, in spite of sharp differences in how well the cohort thought they understood the subjects, they achieve a very similar rank for interest.
 
-There were a number of asymmetrical responses with 43 respondents marking Agree or Strongly Agree in one column and Disagree or Strongly Disagree in the other. In this case, around 21% (25 total of 116) of positive responses to this question on "Religious Studies" as a subject had a dichotomous, or confidently negative sentiment with regard to studying "Theology". Similarly, around 22% (24 total of 107) of positive responses to this question on "Theology" had a confidently negative response with regard to "Religious Studies". However, in all cases where a respondent marked that they "Strongly Agree" with regard to the study of theology they had a positive or ambiguous ("Neither/Nor" or "Prefer not to answer") response to Religious Studies. The opposite ("Strongly Agree" on "Religious Studies" and a negative sentiment towards "Theology") was only the case for 7 responses out of a total of nearly 1000. We take this to indicate that sentiments towards theology and religious studies do not dichotomise in straight-forward ways. Many of our respondents had overlapping, if asymetrical interest in both. We would recommend further qualitative research to develop some more nuanced and in-depth tests for the perceptions of prospective University students towards these two themes alongside others such as "spirituality" or specific religious traditions (e.g. Islam, Judaism, Sikhism, etc.).
+Subsetting the responses also reveals some surprising trends in the data, contradicting an expectation that the results might be dichotomous. Just under 5% of responses were asymmetrical in marking interest in theology and religious studies with 43 respondents marking Agree or Strongly Agree in one column and Disagree or Strongly Disagree in the other. In this case, only around 21% (25 of 116 total) of positive responses to this question on "Religious Studies" as a subject had a dichotomous, or confidently negative sentiment with regard to studying "Theology". Similarly, around 22% (24 total of 107) of positive responses to this question on "Theology" had a confidently negative response with regard to "Religious Studies".
+
+However, in all cases where a respondent marked that they "Strongly Agree" with regard to the study of theology, they had a positive or ambiguous ("Neither/Nor" or "Prefer not to answer") response to interest in Religious Studies. The opposite ("Strongly Agree" on "Religious Studies" and a negative sentiment towards "Theology") was only the case for less than 1% (7) responses out of a total of nearly 1000. We take this to indicate that sentiments towards theology and religious studies in this sample do not dichotomise in straight-forward ways. Many respondents had overlapping, if different, interest in both. We would recommend further qualitative research to develop some more nuanced and in-depth tests for the perceptions of prospective University students towards these two themes alongside others such as "spirituality" or specific religious traditions (e.g. Islam, Judaism, Sikhism, etc.).
 
 ## Do A-Levels matter?
 
-Only 7% of students who took the survey indicated "Yes" to the question "Are you currently studying A level Religious Studies, or intending to?” And analysis of this data reveals that positive sentiment towards TRS degree programmes far exceeds and does not correlate in significant ways to whether a student indicated they had taken or intended to take A-level Religious Studies.
+Given the differences in correlations shown above based on a pupil's participation in GCSE study, we sought to understand whether participation in A-Levels had a correlation with interest in TRS study. This was a small sample, only 7% of students who took the survey indicated "Yes" to the question "Are you currently studying A level Religious Studies, or intending to?” But there was some sense of correlation
+
+```{r}
+Q6_yes_a_levels <- admissions_data %>%
+  filter(Q14 == 1) %>%
+  select(starts_with("Q6"))
+
+# Likert() loves a good data frame
+Q6_yes_a_levels <- as.data.frame(Q6_yes_a_levels)
+
+# We need to convert named vectors into factors for likert()
+for (col in names(Q6_yes_a_levels)) {
+  Q6_yes_a_levels[[col]] <- factor(Q6_yes_a_levels[[col]], levels = c(
+  "Strongly agree" = 1,
+  "Agree" = 2,
+  "Neither/Nor" = 3,
+  "Disagree" = 4,
+  "Strongly disagree" = 5))
+}
+
+# Reverse levels for plot
+for (col in names(Q6_yes_a_levels)) {
+Q6_yes_a_levels[[col]] <- factor(Q6_yes_a_levels[[col]], levels = rev(levels(Q6_yes_a_levels[[col]])))
+}
+
+plot(likert(Q6_yes_a_levels))
+
+str(Q6_yes_a_levels)
+
+Q6_yes_a_levels <- admissions_data_numeric %>%
+  filter(Q14 == 1) %>%
+  select(starts_with("Q6"))
+
+Q6_correlation_matrix <- cor(Q6_yes_a_levels, use = "complete.obs")
+
+corrplot(Q6_correlation_matrix, method = "number", type = "upper",
+         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2")
+```
+
+We can see how, for this subset, interest in religious studies and theology both increase substantially, particularly for the former of the two. Compare this to the (much larger) cohort in our study who reported they had not participated in RS A-Levels:
+
+```{r}
+Q6_no_a_levels <- admissions_data %>%
+  filter(Q14 == 2) %>%
+  select(starts_with("Q6"))
+
+# Likert() loves a good data frame
+Q6_no_a_levels <- as.data.frame(Q6_no_a_levels)
+
+# We need to convert named vectors into factors for likert()
+for (col in names(Q6_yes_a_levels)) {
+  Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = c(
+  "Strongly agree" = 1,
+  "Agree" = 2,
+  "Neither/Nor" = 3,
+  "Disagree" = 4,
+  "Strongly disagree" = 5))
+}
+
+# Reverse levels for plot
+for (col in names(Q6_no_a_levels)) {
+Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = rev(levels(Q6_no_a_levels[[col]])))
+}
+
+plot(likert(Q6_no_a_levels))
+```
 
 ## Are interested students religious?
 
@@ -626,16 +627,26 @@ Positive sentiments also did not correlate in significant ways to participation 
 Negative responses for "theology" do not correlate in easily perceptible ways to religious identity. Prospective students who marked "Atheist" (68%) and "No religion" (77%) were likely to indicate disagreement, but so were Hindu (71%), Muslim (65%) and Pagan (71%) students. Lower, but still significant Disagree/Strongly Disagree responses were also the case for "Spiritual but not religious" (53%), "Christian" (55%) and "Agnostic" (55%) students.
 
 ```{r}
-Q5_religious_cor_matrix <- cor(admissions_data_numeric[, grep("^Q5", colnames(admissions_data_numeric))], admissions_data_numeric$religion_bin, use = "complete.obs")
+Q6_religious <- admissions_data %>%
+  filter(religion_bin == "religious") %>%
+  select(starts_with("Q6"))
 
-Q6_religious_cor_matrix <- cor(admissions_data_numeric[, grep("^Q6", colnames(admissions_data_numeric))], admissions_data_numeric$religion_bin, use = "complete.obs")
+# Likert() loves a good data frame
+Q6_no_a_levels <- as.data.frame(Q6_no_a_levels)
 
-cor(admissions_data_numeric$religion_bin, admissions_data_numeric$Q6_Religious_Studies)
+# We need to convert named vectors into factors for likert()
+for (col in names(Q6_yes_a_levels)) {
+  Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = c(
+  "Strongly agree" = 1,
+  "Agree" = 2,
+  "Neither/Nor" = 3,
+  "Disagree" = 4,
+  "Strongly disagree" = 5))
+}
 
-cor(climate_experience_data$Q57_1, climate_experience_data$spirituality_score, use = "complete.obs")
-
-str(Q6_religious_cor_matrix)
-
+# Reverse levels for plot
+for (col in names(Q6_no_a_levels)) {
+Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = rev(levels(Q6_no_a_levels[[col]])))
 ```
 
 ## Some observations regarding mystique
