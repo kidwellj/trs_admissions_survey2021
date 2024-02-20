@@ -6,23 +6,19 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(ggplot2)
-library(devtools)
 library(usethis)
 library(devtools)
 library(likert)
-# Load RColorBrewer
-# install.packages("RColorBrewer")
 library(RColorBrewer)
-library("stringr")    # Load stringr package, used for wrapping label text in plots
-library(dplyr)        # Used for filtering below
-library(scales)       # Used for adding percentages to bar charts
-# library(kable)        # Used for generating markdown tables
+library("readxl")
+library(haven)
 
 # Define colour palettes for plots below
 coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette: https://colorbrewer2.org/#type=diverging&scheme=RdYlBu&n=5
 
 TSR_data <- read.csv("./data/TSR data complete.csv")
 subject_data <- read.csv("./data/Subject data.csv")
+admissions_data <- read_excel("./data/TSR_data_numbers.xlsx", sheet = "Raw data - completes")
 
 # Set up local workspace, as needed:
 
@@ -38,6 +34,203 @@ if (dir.exists("figures") == FALSE) {
 if (dir.exists("derivedData") == FALSE) {
   dir.create("derivedData")
 }
+
+# Refactor data
+q2_labels <- c("15 or under" = 1, "16" = 2, "17" = 3, "18" = 4, "19" = 5, "20" = 6, "21 or over" = 7, "Prefer not to say" = 8)
+admissions_data$Q2 <- labelled(admissions_data$Q2, q2_labels, label = "How old are you?")
+
+admissions_data$Q3 <- labelled(admissions_data$Q3, c("Year 11/S4/Year 12(NI)" = 1, "Year 12/S5/Year 13(NI)" = 2, "Year 13/S6/Year 14(NI)" = 3, "I am currently on a gap year" = 4, "I am currently on an undergraduate/HE college course" = 5, "I am in full-time employment" = 6, "I am unemployed" = 7, "Other" = 8, "Prefer not to say" = 9), label = "Which of the following best describes your MOST RECENT year of study?")
+
+admissions_data$Q4 <- labelled(admissions_data$Q4, c("Yes, definitely" = 1, "Yes, probably" = 2, "I haven’t ruled it out" = 3), label = "Are you considering or planning to go to university in the future?")
+
+common_labels <- c(
+  "Strongly agree" = 1,
+  "Agree" = 2,
+  "Neither/Nor" = 3,
+  "Disagree" = 4,
+  "Strongly disagree" = 5,
+  "Prefer not to say" = 0
+)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q5_")), ~ labelled(., common_labels, label = "I have a good understanding of what this subject involves"))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q6_")), ~ labelled(., common_labels, label = "I would be interested in studying this subject at University"))
+
+common_labels2 <- c(
+  "Good employability prospects" = 1,
+  NULL = 2,
+  NULL = 3,
+  NULL = 4,
+  "Poor employability prospects" = 5,
+  "Prefer not to say" = 0
+)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q7_")), ~ labelled(., common_labels2, label = "This subject has… employability prospects"))
+
+admissions_data$Q8 <- labelled(admissions_data$Q8, c("Theology is a subject for religious people" = 1, NULL = 2, NULL = 3, NULL = 4, "Theology is a subject for religious and non-religious people" = 5, "Prefer not to say" = 0), label = "Thinking about Theology, please select an option on the scale from 1 to 5 which best represents your opinion")
+
+admissions_data$Q9 <- labelled(admissions_data$Q9, c("Religion is a subject for religious people" = 1, NULL = 2, NULL = 3, NULL = 4, "Religion is a subject for religious and non-religious people" = 5, "Prefer not to say" = 0), label = "Thinking about Religion, please select an option on the scale from 1 to 5 which best represents your opinion")
+
+common_labels3 <- c(
+  "Psychology" = 1, "Arts" = 2, "Sociology" = 3, "Politics" = 4, "History" = 5, "Philosophy" = 6, "Ethics" = 7, "Archaeology" = 8, "Textual studies" = 9, "Literature" = 10, "Law" = 11, "Economics" = 12, "Science" = 13, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q10_")), ~ labelled(., common_labels3, label = "I think that a theology degree would include..."))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q11_")), ~ labelled(., common_labels3, label = "I think that a religious studies degree would include..."))
+
+common_labels4 <- c(
+  "Politics" = 1, "History" = 2, "Ethics" = 3, "Theology" = 4, "Religion" = 5, "Law" = 6, "Economics" = 7, "Maths" = 8, "Logic" = 9, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q12_")), ~ labelled(., common_labels4, label = "I think that a philosophy degree would include..."))
+
+common_labels5 <- c("Yes" = 1, "No" = 2, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q13")), ~ labelled(., common_labels5, label = "Are you currently studying A level Religious Studies, or intending to?"))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q14")), ~ labelled(., common_labels5, label = "Are you studying or did you previously study GCSE Religious Studies?"))
+
+admissions_data$Q16 <- labelled(admissions_data$Q16, c("Male"=1, "Female"=2, "I identify my gender in another way"=3, "Prefer not to say"=4), label = "I identify my gender as…")
+
+admissions_data$Q17 <- labelled(admissions_data$Q17, c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=5, "Any other Asian background"=6, "Black - African"=7, "Black - Caribbean"=8, "Any other Black background"=9, "Mixed - White and Black Caribbean"=10, "Mixed - White and Black African"=11, "Mixed - White and Black Asian"=12, "Any other Mixed/Multiple Ethnic background"=13, "White - British"=14, "White - Irish"=15, "Gypsy or Irish Traveller"=16, "Any other White background"=17, "Other Ethnic group"=18, "Prefer not to say OR Other"=0), label = "What is your ethnic group?")
+
+admissions_data$Q18 <- labelled(admissions_data$Q18, c("Agnostic"=1, "Atheist"=2, "Baha'i"=3, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Indigenous Traditional Religious"=10, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Prefer not to say OR Other"=0), label = "What is your religion?")
+
+# Create bins:
+
+# For Q5 - understanding
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q5_Theology = ifelse(Q5_Theology == 0, NA, Q5_Theology),
+    understanding_theology_bin = case_when(
+      Q5_Theology < 3 ~ "high",
+      Q5_Theology > 3 ~ "low",
+      Q5_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+# For Q5 - understanding
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q5_Religious_Studies = ifelse(Q5_Religious_Studies == 0, NA, Q5_Religious_Studies),
+    understanding_religion_bin = case_when(
+      Q5_Religious_Studies < 3 ~ "high",
+      Q5_Religious_Studies > 3 ~ "low",
+      Q5_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+# For Q6 - interest
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q6_Theology = ifelse(Q6_Theology == 0, NA, Q6_Theology),
+    interest_theology_bin = case_when(
+      Q6_Theology < 3 ~ "high",
+      Q6_Theology > 3 ~ "low",
+      Q6_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q6 - interest
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q6_Religious_Studies = ifelse(Q6_Religious_Studies == 0, NA, Q6_Religious_Studies),
+    interest_religion_bin = case_when(
+      Q6_Religious_Studies < 3 ~ "high",
+      Q6_Religious_Studies > 3 ~ "low",
+      Q6_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q7 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q7_Theology = ifelse(Q7_Theology == 0, NA, Q7_Theology),
+    employability_optimism_theology_bin = case_when(
+      Q7_Theology < 3 ~ "high",
+      Q7_Theology > 3 ~ "low",
+      Q7_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q7 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q7_Religious_Studies = ifelse(Q7_Religious_Studies == 0, NA, Q7_Religious_Studies),
+    employability_optimism_religion_bin = case_when(
+      Q7_Religious_Studies < 3 ~ "high",
+      Q7_Religious_Studies > 3 ~ "low",
+      Q7_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q8 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q8 = ifelse(Q8 == 6, NA, Q8),
+    theology_for_bin = case_when(
+      Q8 < 3 ~ "religious",
+      Q8 > 3 ~ "all_people",
+      Q8 == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("all_people", "neutral", "religious"))
+  )
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q9 = ifelse(Q9 == 6, NA, Q9),
+    religion_for_bin = case_when(
+      Q9 < 3 ~ "religious",
+      Q9 > 3 ~ "all_people",
+      Q9 == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("all_people", "neutral", "religious"))
+  )
+
+# Q17 non-white / white ethnicity bins
+admissions_data <- admissions_data %>%
+  mutate(
+    Q17 = ifelse(Q17 == 0, NA, Q17),
+    ethnicity_bin = case_when(
+      Q17 > 13 | Q17 < 18 ~ "white",
+      TRUE ~ "non-white"
+    ) %>% factor(levels = c("white", "non-white"))
+  )
+
+# Q18 non-religious / institutioal bins
+admissions_data <- admissions_data %>%
+  mutate(
+      Q18 = ifelse(Q18 == 0, NA, Q18),
+      religion_bin = case_when(
+      Q18 %in% c(1, 2, 5, 17) ~ "non-religious",
+      TRUE ~ "religious"
+    ) %>% factor(levels = c("non-religious", "religious"))
+  )
+
+```
+
+```{r correlations}
+Q5_data <- select(admissions_data, Q5_Philosophy:Q5_Business)
+cor(admissions_data$Q5_Philosophy, admissions_data$Q6_Philosophy)
+
 ```
 
 # Basic demographic summary visualisations:
@@ -45,15 +238,21 @@ if (dir.exists("derivedData") == FALSE) {
 
 # 1. Calculate for age of respondent:
 
-# JK note: To keep things tidy, I've shifted the code here so that this isn't overwriting the dataset, but is instead operating off a separate df (same below)
-TSR_data_summaries_age <- factor(TSR_data$Age, levels = c(1, 2, 3, 4, 5, 6, 7, 8), labels = c("15 or under", "16", "17", "18", "19", "20", "21 or over", "Prefer not to say"))
-age_pie <- pie(table(TSR_data_summaries_age), col=coul3, cex = 0.8)
+age <- factor(admissions_data$Q2), levels = c(1, 2, 3, 4, 5, 6, 7, 8), labels = c("15 or under", "16", "17", "18", "19", "20", "21 or over", "Prefer not to say"))
+age_pie <- pie(table(admissions_data$Q2), col=coul3, cex = 0.8)
 # JK note: adding in a bar chart here, as according to the interwebs it's (apparently?) more accurate to visualise than bar charts
-data_summaries_age <- ggplot(TSR_data, aes(TSR_data_summaries_age)) + geom_bar()
-data_summaries_age + labs(title = "Respondent Age Distribution", x = "Age", y = "")
+
+ggplot(admissions_data, aes(factor(Q2))) + 
+  geom_bar() +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
+  labs(title = "Respondent Age Distribution", x = "Age", y = "") +
+  scale_x_discrete(labels = labels(q2_labels))
+
 # save to png file for reports
 ggsave("figures/TSR_data_summaries_age.png")
+```
 
+```{r}
 # 2. Calculate for year of study:
 
 TSR_data_summaries_yos <- factor(TSR_data$MOSTRECENTyearofstudy, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), labels = c("Year 11/S4/Year 12(NI)", "Year 12/S5/Year 13(NI)", "Year 13/S6/Year 14(NI)", "I am currently on a gap year", "I am currently on an undergraduate/HE college course", "I am in full-time employment", "I am unemployed", "Other", "Prefer not to say"))
@@ -62,7 +261,9 @@ data_summaries_yos <- ggplot(TSR_data, aes(TSR_data_summaries_yos)) + geom_bar()
 data_summaries_yos + labs(title = "Respondent Most Recent Year of Study", x = "", y = "")
 # save to png file for reports
 ggsave("figures/TSR_data_summaries_yos.png")
+```
 
+```{r}
 # 3. Gender identity:
 
 TSR_data_summaries_gender <- factor(TSR_data$Gender, levels = c(1, 2, 3, 4), labels = c("Male", "Female", "I identify my gender in another way", "Prefer not to say"))
@@ -214,7 +415,9 @@ employability_bar <- ggplot(employability_mean, aes(x = Subject, y = Employabili
 employability_bar + labs(title = "please rate ... employability prospects", x = "", y = "")
 # save to png file for reports
 ggsave("figures/TSR_data_subject_employability.png")
+```
 
+```{r}
 ### Likert Stacked Bar Chart ###
 
 # Take selection of data re: understanding
@@ -274,10 +477,14 @@ str(Understanding_data)
 levels(Understanding_data)
 summary(Understanding_data)
 likert_test_understand <- likert(Understanding_data)
+Understanding_data <- Q5_data
+likert_test_understand <- likert(Q5_data)
 plot(likert_test_understand)
 # save to png file for reports
 ggsave("figures/understanding_likert.png")
+```
 
+```{r}
 Interest_data <- TSR_data[, 18:29]
 # Convert each column to factors
 Interest_data$InterestinstudyingPhilosophy = factor(Interest_data$InterestinstudyingPhilosophy,
