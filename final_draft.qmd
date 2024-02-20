@@ -1,0 +1,699 @@
+---
+title: "Prospective UK undergraduate attitudes towards Theology and Religious Studies"
+author: "Jeremy H. Kidwell"
+format: pdf
+editor: visual
+---
+
+```{r setup}
+library(ggplot2)
+library(usethis)
+library(devtools)
+library(likert)
+library(RColorBrewer)
+library("readxl")
+library(haven)
+library(scales)
+library(tidyverse)
+library(likert)
+library(data.table)
+library(formattable)
+library(corrplot)
+
+# Set a few color variables to make our table more visually appealing
+customGreen0 = "#DeF7E9"
+customGreen = "#71CA97"
+customRed = "#ff7f7f"
+coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette
+
+subject_data <- read.csv("./data/Subject data.csv")
+admissions_data <- read_excel("./data/TSR_data_numbers.xlsx", sheet = "Raw data - completes")
+admissions_data_numeric <- read_excel("./data/TSR_data_numbers.xlsx", sheet = "Raw data - completes")
+admissions_data_numeric <- select(admissions_data_numeric, -c(Q17_other, Q18_other))
+TSR_data <- read.csv("./data/TSR data complete.csv") # From analysis in 2021
+
+# Set up local workspace, as needed:
+
+if (dir.exists("data") == FALSE) {
+  dir.create("data") 
+}
+
+# These paths are excluded from github as it is best practice for end-user to generate their own
+
+if (dir.exists("figures") == FALSE) {
+  dir.create("figures") 
+}
+if (dir.exists("derivedData") == FALSE) {
+  dir.create("derivedData")
+}
+```
+
+```{r refactoring}
+# Refactor data
+admissions_data$Q2 <- labelled(admissions_data$Q2, c("15 or under" = 1, "16" = 2, "17" = 3, "18" = 4, "19" = 5, "20" = 6, "21 or over" = 7, "Prefer not to say" = 8), label = "How old are you?")
+
+admissions_data$Q3 <- labelled(admissions_data$Q3, c("Year 11/S4/Year 12(NI)" = 1, "Year 12/S5/Year 13(NI)" = 2, "Year 13/S6/Year 14(NI)" = 3, "I am currently on a gap year" = 4, "I am currently on an undergraduate/HE college course" = 5, "I am in full-time employment" = 6, "I am unemployed" = 7, "Other" = 8, "Prefer not to say" = 9), label = "Which of the following best describes your MOST RECENT year of study?")
+
+admissions_data$Q4 <- labelled(admissions_data$Q4, c("Yes, definitely" = 1, "Yes, probably" = 2, "I haven’t ruled it out" = 3), label = "Are you considering or planning to go to university in the future?")
+
+common_labels <- c(
+  "Strongly agree" = 1,
+  "Agree" = 2,
+  "Neither/Nor" = 3,
+  "Disagree" = 4,
+  "Strongly disagree" = 5,
+  "Prefer not to say" = 0
+)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q5_")), ~ labelled(., common_labels, label = "I have a good understanding of what this subject involves"))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q6_")), ~ labelled(., common_labels, label = "I would be interested in studying this subject at University"))
+
+common_labels2 <- c(
+  "Good employability prospects" = 1,
+  NULL = 2,
+  NULL = 3,
+  NULL = 4,
+  "Poor employability prospects" = 5,
+  "Prefer not to say" = 0
+)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q7_")), ~ labelled(., common_labels2, label = "This subject has… employability prospects"))
+
+admissions_data$Q8 <- labelled(admissions_data$Q8, c("Theology is a subject for religious people" = 1, NULL = 2, NULL = 3, NULL = 4, "Theology is a subject for religious and non-religious people" = 5, "Prefer not to say" = 0), label = "Thinking about Theology, please select an option on the scale from 1 to 5 which best represents your opinion")
+
+admissions_data$Q9 <- labelled(admissions_data$Q9, c("Religion is a subject for religious people" = 1, NULL = 2, NULL = 3, NULL = 4, "Religion is a subject for religious and non-religious people" = 5, "Prefer not to say" = 0), label = "Thinking about Religion, please select an option on the scale from 1 to 5 which best represents your opinion")
+
+common_labels3 <- c(
+  "Psychology" = 1, "Arts" = 2, "Sociology" = 3, "Politics" = 4, "History" = 5, "Philosophy" = 6, "Ethics" = 7, "Archaeology" = 8, "Textual studies" = 9, "Literature" = 10, "Law" = 11, "Economics" = 12, "Science" = 13, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q10_")), ~ labelled(., common_labels3, label = "I think that a theology degree would include..."))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q11_")), ~ labelled(., common_labels3, label = "I think that a religious studies degree would include..."))
+
+common_labels4 <- c(
+  "Politics" = 1, "History" = 2, "Ethics" = 3, "Theology" = 4, "Religion" = 5, "Law" = 6, "Economics" = 7, "Maths" = 8, "Logic" = 9, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q12_")), ~ labelled(., common_labels4, label = "I think that a philosophy degree would include..."))
+
+common_labels5 <- c("Yes" = 1, "No" = 2, "Prefer not to say" = 0)
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q13")), ~ labelled(., common_labels5, label = "Are you currently studying A level Religious Studies, or intending to?"))
+
+admissions_data <- admissions_data %>%
+  mutate_at(vars(starts_with("Q14")), ~ labelled(., common_labels5, label = "Are you studying or did you previously study GCSE Religious Studies?"))
+
+admissions_data$Q16 <- labelled(admissions_data$Q16, c("Male"=1, "Female"=2, "I identify my gender in another way"=3, "Prefer not to say"=4), label = "I identify my gender as…")
+
+admissions_data$Q17 <- labelled(admissions_data$Q17, c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=5, "Any other Asian background"=6, "Black - African"=7, "Black - Caribbean"=8, "Any other Black background"=9, "Mixed - White and Black Caribbean"=10, "Mixed - White and Black African"=11, "Mixed - White and Black Asian"=12, "Any other Mixed/Multiple Ethnic background"=13, "White - British"=14, "White - Irish"=15, "Gypsy or Irish Traveller"=16, "Any other White background"=17, "Other"=18, "Prefer not to say"=0), label = "What is your ethnic group?")
+
+admissions_data$Q18 <- labelled(admissions_data$Q18, c("Agnostic"=1, "Atheist"=2, "Baha'i"=3, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Indigenous Traditional Religious"=10, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18, "Prefer not to say"=0), label = "What is your religion?")
+```
+```{r bins and subsetting}
+
+# For Q5 - understanding
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q5_Theology = ifelse(Q5_Theology == 0, NA, Q5_Theology),
+    understanding_theology_bin = case_when(
+      Q5_Theology < 3 ~ "high",
+      Q5_Theology > 3 ~ "low",
+      Q5_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+# For Q5 - understanding
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q5_Religious_Studies = ifelse(Q5_Religious_Studies == 0, NA, Q5_Religious_Studies),
+    understanding_religion_bin = case_when(
+      Q5_Religious_Studies < 3 ~ "high",
+      Q5_Religious_Studies > 3 ~ "low",
+      Q5_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+# For Q6 - interest
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q6_Theology = ifelse(Q6_Theology == 0, NA, Q6_Theology),
+    interest_theology_bin = case_when(
+      Q6_Theology < 3 ~ "high",
+      Q6_Theology > 3 ~ "low",
+      Q6_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q6 - interest
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q6_Religious_Studies = ifelse(Q6_Religious_Studies == 0, NA, Q6_Religious_Studies),
+    interest_religion_bin = case_when(
+      Q6_Religious_Studies < 3 ~ "high",
+      Q6_Religious_Studies > 3 ~ "low",
+      Q6_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q7 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q7_Theology = ifelse(Q7_Theology == 0, NA, Q7_Theology),
+    employability_optimism_theology_bin = case_when(
+      Q7_Theology < 3 ~ "high",
+      Q7_Theology > 3 ~ "low",
+      Q7_Theology == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q7 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q7_Religious_Studies = ifelse(Q7_Religious_Studies == 0, NA, Q7_Religious_Studies),
+    employability_optimism_religion_bin = case_when(
+      Q7_Religious_Studies < 3 ~ "high",
+      Q7_Religious_Studies > 3 ~ "low",
+      Q7_Religious_Studies == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("low", "neutral", "high"))
+  )
+
+# For Q8 - employability prospects
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q8 = ifelse(Q8 == 6, NA, Q8),
+    theology_for_bin = case_when(
+      Q8 < 3 ~ "religious",
+      Q8 > 3 ~ "all_people",
+      Q8 == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("all_people", "neutral", "religious"))
+  )
+
+admissions_data <- admissions_data %>%
+  mutate(
+    Q9 = ifelse(Q9 == 6, NA, Q9),
+    religion_for_bin = case_when(
+      Q9 < 3 ~ "religious",
+      Q9 > 3 ~ "all_people",
+      Q9 == 3 ~ "neutral",
+      TRUE ~ NA
+    ) %>% factor(levels = c("all_people", "neutral", "religious"))
+  )
+
+# Q17 non-white / white ethnicity bins
+admissions_data <- admissions_data %>%
+  mutate(
+    Q17 = ifelse(Q17 == 0, NA, Q17),
+    ethnicity_bin = case_when(
+      Q17 > 13 | Q17 < 18 ~ "white",
+      TRUE ~ "non-white"
+    ) %>% factor(levels = c("white", "non-white"))
+  )
+
+# Q18 non-religious / institutioal bins
+admissions_data <- admissions_data %>%
+  mutate(
+      Q18 = ifelse(Q18 == 0, NA, Q18),
+      religion_bin = case_when(
+      Q18 %in% c(1, 2, 5, 17) ~ "non-religious",
+      TRUE ~ "religious"
+    ) %>% factor(levels = c("non-religious", "religious"))
+  )
+
+admissions_data_numeric <- admissions_data_numeric %>%
+  mutate(
+      Q18 = ifelse(Q18 == 0, NA, Q18),
+      religion_bin = case_when(
+      Q18 %in% c(1, 2, 5, 17) ~ 0,
+      TRUE ~ 1
+    )
+  )
+```
+
+## Introduction
+
+Opening about UG admissions scenario.
+
+At the same time that there is increasing pressure on admissions, it is also the case that in the particular case of theology and religious studies, public perceptions and framings of religion are shifting in significant ways. Pointing to a variety of phenomena, like vicarious religion, everyday religion, the increasing interest in spirituality and new religious movements, scholars have suggested that we are operatign in a new post-secular social landscape, which is not less religious, as secularisation theorists might have expected, but differently religious. Research into youth and religion has shown that this phenomena works out in the same ways for young people as it does for adults.
+
+Working off the expectation that people are interfacing with theology and religion in different ways, we sought to explore in this study how this might inflect undergraduate admissions in Theology and Religious Studies ("TRS") programmes. We theorised that young people in the UK aged 16 - 18 might actually be interested in studying this topic, but that their interests might have shifted into differently framed definitions and expectations from previous generations. Gathering this knowledge will be crucial for faculty involved in designing academic programmes and UG recruitment in TRS, especially as there is a broader government push to shift enrollments for students from the humanities to STEM subjects.
+
+For this research, we conducted a survey of prospective undergraduate students in the UK, aged 16-19. The survey instrument (Appendix A) was designed by Paul Ashby and Jeremy Kidwell at the University of Birmingham, with helpful critical input from other colleagues at Birminngham: Amy Daughton, Jagbir Jhutti-Johal, Carissa Sharp, Rachael Shillitoe, and Karen Wenell. Survey data was collected via online survey using Qualtrics by TSR Insight and delivered to members of the online platform "The Student Room" which was open from 21st June and 4th July 2021. The resulting dataset is a random sample of 933 complete survey results from UK students (aged 16-18) in years 11, 12 and 13.
+
+Responses were anonymous, and respondents were informed of the survey purposes and asked to indicate if they were happy to participate in the survey.
+
+There were three additional sifting questions: (1) we asked respondents their age, with results from "15 and under" and "prefer not to say" excluded and (2) we asked students about their most recent year of study, with responses that were not Y11-Y13 excluded. These included "I am currently on a gap year," "I am currently on an undergraduate / HE college course," "I am in full-time employment" (readers can find the full list of excluded response categories in Appendix A). The final sifting question asked respondents "Are you considering or planning to go to university in the future?" and responses of "no" or "prefer not to say" were excluded. The resulting sample only included respondents who reported themselves as pupils in school aged 16-19 who were considering going to University in the future.
+
+# Demographics
+
+The sample was distributed evenly across the age cohorts with around 300 responses from each category:
+
+```{r age}
+q2_labels <- c("16" = 1, "17" = 2, "18" = 3, "19" = 4)
+
+ggplot(admissions_data, aes(factor(Q2))) + 
+  geom_bar() +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
+  labs(title = "Respondent Age Distribution", x = "Age", y = "") +
+  scale_x_discrete(labels = labels(q2_labels))
+
+# save to png file for reports
+ggsave("figures/admissions_data_summaries_age.png")
+```
+
+We also asked respondents to self-identify their gender, ethnic group and religion. Distribution across these categories was as follows:
+
+```{r gender}
+q16_labels <- c("Male"=1, "Female"=2, "I identify my gender in another way"=3, "Prefer not to say"=4)
+
+ggplot(admissions_data, aes(factor(Q16))) + 
+  geom_bar() +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
+  labs(title = "Respondent Gender Self-Identification Distribution", x = "Gender", y = "") + scale_x_discrete(labels = labels(q16_labels))
+```
+
+
+
+```{r ethnicity}
+q17_labels <- c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=5, "Any other Asian background"=6, "Black - African"=7, "Black - Caribbean"=8, "Any other Black background"=9, "Mixed - White and Black Caribbean"=10, "Mixed - White and Black African"=11, "Mixed - White and Black Asian"=12, "Any other Mixed/Multiple Ethnic background"=13, "White - British"=14, "White - Irish"=15, "Any other White background"=16, "Prefer not to say"=17, "Other"=18)
+
+ggplot(admissions_data, aes(factor(Q17))) +
+  geom_bar(fill = "darkgreen", stat = "count") +
+  geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
+  labs(title = "Respondent Ethnicity", x = "Ethnicity", y = "") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) + scale_x_discrete(labels = labels(q17_labels))
+```
+
+
+```{r religion}
+
+q18_labels <- c("Agnostic"=1, "Atheist"=2, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18)
+
+ggplot(admissions_data, aes(factor(Q18))) +
+  geom_bar(fill = "blue", stat = "count") +
+  geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
+  labs(title = "Respondent Religion", x = "Religion", y = "") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) +
+  scale_x_discrete(labels = labels(q18_labels))
+
+```
+
+# Survey Responses
+
+We asked our respondents to tell us about their attitudes towards a variety of subjects. To ensure reliability of the results, subjects were presented in the survey in a random order, and there was no priming to indicate that the survey was meant to elicit attitudes towards any specific subject. Towards this end, we asked respondents to rank on a likert scale, their reaction to three statements, "I have a good understanding of what this subject involves," "I would be interested in studying this subject at University," and then to rank 1-5 their perception of whether each subject represented "Good employability prospects" or "Poor employability prospects".
+
+## Understanding of subjects
+
+```{r understanding}
+# Take selection of data re: understanding
+Understanding_data <- TSR_data[, 6:17]
+# Convert each column to factors
+Understanding_data$GoodunderstandingofPhilosophy = factor(Understanding_data$GoodunderstandingofPhilosophy,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofSociology = factor(Understanding_data$GoodunderstandingofSociology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofPsychology = factor(Understanding_data$GoodunderstandingofPsychology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofHistory = factor(Understanding_data$GoodunderstandingofHistory,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofEthics = factor(Understanding_data$GoodunderstandingofEthics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofTheology = factor(Understanding_data$GoodunderstandingofTheology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofReligiousStudies = factor(Understanding_data$GoodunderstandingofReligiousStudies,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofPolitics = factor(Understanding_data$GoodunderstandingofPolitics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofEnglish = factor(Understanding_data$GoodunderstandingofEnglish,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofMath = factor(Understanding_data$GoodunderstandingofMath,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofComputerScience = factor(Understanding_data$GoodunderstandingofComputerScience,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Understanding_data$GoodunderstandingofBusiness = factor(Understanding_data$GoodunderstandingofBusiness,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Understanding_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+likert_test_understand <- likert(Understanding_data)
+plot(likert_test_understand)
+```
+We've plotted these results as a diverging bar chart centred on neutral responses, so that negative and positive visually diverge in clear ways. The bottom four subjects represent those where respondents were on average, less confident that they understood what study of the subject might involve. It is perhaps not surprising to see that subjects which are universally studied in school like "math," "english" and "history" were considered well-understood. It is interesting to note, however, that while respondents were confident that they knew what "Religious Studies" involved (60% were "strongly agree" or "agree"), these results were inverted (63% and 22%), almost perfectly for "Theology". However, it is important to note that - as we will go on to observe - a lack of understanding did *not* correlate to a lack of interest in studying a subject.
+
+## Employability prospects
+
+```{r employability prospects}
+Employability_data <- TSR_data[, 30:41]
+# Convert each column to factors
+Employability_data$Philosophyemployability = factor(Employability_data$Philosophyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Sociologyemployability = factor(Employability_data$Sociologyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$PsychologyEmployability = factor(Employability_data$PsychologyEmployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Historyemployability = factor(Employability_data$Historyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Ethicsemployability = factor(Employability_data$Ethicsemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Theologyemployability = factor(Employability_data$Theologyemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$ReligiousStudiesemployability = factor(Employability_data$ReligiousStudiesemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Politicsemployability = factor(Employability_data$Politicsemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Englishemployability = factor(Employability_data$Englishemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Mathemployability = factor(Employability_data$Mathemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$ComputerScienceemployability = factor(Employability_data$ComputerScienceemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Employability_data$Businessemployability = factor(Employability_data$Businessemployability,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Employability_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+likert_test_employability <- likert(Employability_data)
+plot(likert_test_employability)
+# save to png file for reports
+ggsave("figures/employability_likert.png")
+```
+When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
+
+```{r correlation plot for employability and interest}
+cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
+
+Q6 <- admissions_data_numeric %>%
+  select(starts_with("Q6"))
+Q7 <- admissions_data_numeric %>%
+  select(starts_with("Q7"))         
+         
+M <- cor(Q6, Q7, use = "complete.obs")
+
+corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
+```
+
+
+## Interest in subjects
+
+```{r interest in studying}
+Interest_data <- TSR_data[, 18:29]
+# Convert each column to factors
+Interest_data$InterestinstudyingPhilosophy = factor(Interest_data$InterestinstudyingPhilosophy,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestinstudyingSociaology = factor(Interest_data$InterestinstudyingSociaology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinStudyingPsychology = factor(Interest_data$InterestedinStudyingPsychology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingHistory = factor(Interest_data$InterestedinstudyingHistory,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingEthics = factor(Interest_data$InterestedinstudyingEthics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingTheology = factor(Interest_data$InterestedinstudyingTheology,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingReligiousStudies = factor(Interest_data$InterestedinstudyingReligiousStudies,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingPolitics = factor(Interest_data$InterestedinstudyingPolitics,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingEnglish = factor(Interest_data$InterestedinstudyingEnglish,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingMath = factor(Interest_data$InterestedinstudyingMath,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingComputerScience = factor(Interest_data$InterestedinstudyingComputerScience,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+Interest_data$InterestedinstudyingBusiness = factor(Interest_data$InterestedinstudyingBusiness,
+                       ordered = TRUE,
+                       levels = c("1", "2", "3", "4", "5")
+                       )
+names(Interest_data) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+likert_test_interest <- likert(Interest_data)
+plot(likert_test_interest)
+```
+
+When it came to interest in studying the subject at University, responses were loosely connected to understanding data. The connection to perception of employablity prospects was even less significant, with the clear winner, computer science, nearly inverting position on the chart from Q7 to Q6.
+
+It is also interesting to note that no subject exceeded more than 50% interest among survey responses, indicating that there may be be a single "average student", but a variety of interest profiles or clusters among prospective students and not a clear leader among all respondents. We do find that three of the top four "understood" subjects remain in the upper half. However, it is interesting to note that they shift ordering to some extent, with Psychology as a clear leader. Further still, one of the least understood subjects "sociology" shifts from rank 9 to rank 4 for interest.
+
+We can generate a correlation matrix to assess whether interest in one subject correlated to others:
+```{r subject interest correlation matrix}
+Q6 <- admissions_data_numeric %>%
+  select(starts_with("Q6"))
+
+Q6_correlation_matrix <- cor(Q6, use = "complete.obs")
+
+corrplot(Q6_correlation_matrix, method = "number", type = "upper",
+         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2")
+```
+We can see that there are several reasonably strong positive correlations and these are all clustered around TRS, ethics and philosophy with the exception of the strong correlation between interest in computer science and math. For interest in theology, the strongest correlations are with interest in religious studies (ρ0.62) ethics (ρ0.60) and philosophy (ρ0.57). For interest in religious studies, the strongest correlations are with interest in the same subjects, albeit with slightly lower correlations: these are theology (ρ0.62), ethics (ρ0.56) and philosophy (ρ0.54).
+
+We will explore further Further research would be helpful in identifying the significance of these associations in the next section. It is interesting to compare the results above subsetting data based on whether a given pupil has or has not taken RE as a GCSE subject. Responses to this question (Q14) were split fairly evenly among our respondents with 493 responding "yes" and 432 "no". The differences here are striking:
+
+```{r}
+Q6_no_GCSE <- admissions_data_numeric %>%
+  filter(Q14 == 2) %>%
+  select(starts_with("Q6"))
+
+Q6_correlation_matrix <- cor(Q6_no_GCSE, use = "complete.obs")
+
+corrplot(Q6_correlation_matrix, method = "number", type = "upper",
+         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2")
+```
+One should be careful not to confuse correlation here with causation, as it is possible that the students who self-select to participate in RE GCSE bring a certain orientation, and not necessarily that their coursework alters their understanding of the subject composition. Nonetheless, we note that while some correlations remain relatively stable across the two cohorts, for example, relating philosophy and ethics, the salience of the relationship between several subjects for this subset of respondents loosens substantially. This includes the relationship between interest in religious studies and theology which drops to ) as well as theology and ethics (). 
+
+```{r}
+Q6_yes_GCSE <- admissions_data_numeric %>%
+  filter(Q14 == 1) %>%
+  select(starts_with("Q6"))
+
+Q6_correlation_matrix <- cor(Q6_yes_GCSE, use = "complete.obs")
+
+corrplot(Q6_correlation_matrix, method = "number", type = "upper",
+         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2")
+```
+Looking at the subset of pupils who indicate they have taken RE GCSE, there emerge some novel correlations, between theology and 
+
+We can also analyse for the strength of correlations for students who identify as religious.
+
+```{r}
+Q6_yes_religious <- admissions_data_numeric %>%
+  filter(religion_bin == 1) %>%
+  select(starts_with("Q6"))
+
+Q6_correlation_matrix <- cor(Q6_yes_religious, use = "complete.obs")
+
+corrplot(Q6_correlation_matrix, method = "number", type = "upper",
+         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2")
+```
+
+## What does study include?
+
+We also asked respondents to indicate what they think the study of theology and religious studies includes in practice and this data can tease out some possible directions for interpreting correlations in the previous section.
+
+Responses to the question about what "a theology degree would include" were as follows:
+
+Philosophy - 74%
+Ethics - 70%
+History - 48%
+Literature - 42%
+Textual studies - 40%
+Sociology - 37%
+Psychology - 26%
+Politics - 24%
+Law - 20%
+Arts - 18%
+Archaeology - 18%
+Science - 13%
+Economics - 4%
+
+Responses to what respondents thought a "religious studies degree would include" varied slightly:
+
+Ethics - 84%
+Philosophy - 81%
+History - 67%
+Textual studies - 47%
+Literature - 43%
+Sociology - 42%
+Politics - 34%
+Law - 26%
+Psychology - 22%
+Arts - 17%
+Archaeology - 16%
+Science - 15%
+Economics - 4%
+
+
+```{r}
+```
+
+
+# Analysis
+
+## Situating interest data
+
+Particularly with respect to the TRS focus of this study, it is important to emphasise that though a smaller number responded positively with relation to Theology and Religious Studies than the other proxy subjects included, these proportions for TRS significantly exceed actual applicant figures reported by UCAS programme enrollments. For 2019, UCAS reports 24,394 applications to Psychology UG programmes, 8,230 to History programmes, 8,285 to Math programmes (JACS group G), 1660 applications to Philosophy UG degree programmes, and 790 to TRS UG degree programmes. Seen in this way, we can assume that understanding and interest in a subject are not currently️ mapping in straight-forward ways onto applications for study at University.
+
+## Comparing Theology and Religious Studies
+
+For the sake of this analysis, we are particularly interested in the similar responses for religious studies and theology. In spite of sharp differences in how well the cohort thought they understood the subjects, they achieve a very similar rank for interest. Subsetting the responses also reveals some surprising trends in the data. 
+
+There were a number of asymmetrical responses with 43 respondents marking Agree or Strongly Agree in one column and Disagree or Strongly Disagree in the other. In this case, around 21% (25 total of 116) of positive responses to this question on "Religious Studies" as a subject had a dichotomous, or confidently negative sentiment with regard to studying "Theology". Similarly, around 22% (24 total of 107) of positive responses to this question on "Theology" had a confidently negative response with regard to "Religious Studies". However, in all cases where a respondent marked that they "Strongly Agree" with regard to the study of theology they had a positive or ambiguous ("Neither/Nor" or "Prefer not to answer") response to Religious Studies. The opposite ("Strongly Agree" on "Religious Studies" and a negative sentiment towards "Theology") was only the case for 7 responses out of a total of nearly 1000. We take this to indicate that sentiments towards theology and religious studies do not dichotomise in straight-forward ways. Many of our respondents had overlapping, if asymetrical interest in both. We would recommend further qualitative research to develop some more nuanced and in-depth tests for the perceptions of prospective University students towards these two themes alongside others such as "spirituality" or specific religious traditions (e.g. Islam, Judaism, Sikhism, etc.).
+
+## Do A-Levels matter?
+
+Only 7% of students who took the survey indicated "Yes" to the question "Are you currently studying A level Religious Studies, or intending to?” And analysis of this data reveals that positive sentiment towards TRS degree programmes far exceeds and does not correlate in significant ways to whether a student indicated they had taken or intended to take A-level Religious Studies.
+
+## Are interested students religious?
+
+Positive sentiments also did not correlate in significant ways to participation in an organised religion. When data was filtered to select students who marked "Agnostic", "Atheist", " Spiritual but not religious" or "No Religion", the proportion of students who indicated participation/intention to participate in A-Level RS did not change, nor was there a significant overall change to the proportion of students who marked "Agree" or "Strongly Agree" to the statement "I would be interested in studying this subject at University".
+
+Negative responses for "theology" do not correlate in easily perceptible ways to religious identity. Prospective students who marked "Atheist" (68%) and "No religion" (77%) were likely to indicate disagreement, but so were Hindu (71%), Muslim (65%) and Pagan (71%) students. Lower, but still significant Disagree/Strongly Disagree responses were also the case for "Spiritual but not religious" (53%), "Christian" (55%) and "Agnostic" (55%) students. 
+
+```{r}
+Q5_religious_cor_matrix <- cor(admissions_data_numeric[, grep("^Q5", colnames(admissions_data_numeric))], admissions_data_numeric$religion_bin, use = "complete.obs")
+
+Q6_religious_cor_matrix <- cor(admissions_data_numeric[, grep("^Q6", colnames(admissions_data_numeric))], admissions_data_numeric$religion_bin, use = "complete.obs")
+
+cor(admissions_data_numeric$religion_bin, admissions_data_numeric$Q6_Religious_Studies)
+
+cor(climate_experience_data$Q57_1, climate_experience_data$spirituality_score, use = "complete.obs")
+
+str(Q6_religious_cor_matrix)
+
+```
+
+## Some observations regarding mystique
+
+It was particularly interesting to note that there is positive interest in studying Theology in spite of the lack of understanding of what that study involves. Further research would be necessary to judge the meaning of this discovery, e.g. whether interest numbers would be increased, unaffected or lessened if the level of "unknowing" or conversely the "mystique" of the subject were reduced. For the sake of this study, we can explore the data to a certain extent in an attempt to ascertain whether the "mystique" factor is significant. 
+
+If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE)`. Bearing in mind that higher response codes in this dataset indicated a more negative response (strongly disagree was coded as 5 whereas strongly agree was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE)` for neutral responses on understanding and a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
+
+```{r}
+Q5Q6 <- admissions_data_numeric %>%
+  select(starts_with("Q6") | starts_with("Q5"))
+Q6 <- admissions_data_numeric %>%
+  select(starts_with("Q6"))
+
+M <- cor(Q6, Q5, use = "complete.obs")
+corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
+```
+Here, the least weak correlation (between interest and understanding of computer science) is just over 0.5, and even this correlation should be considered weak at best.
+
+```{r}
+admissions_data %>%
+  filter(understanding_theology_bin == "high") %>%
+  summarise(mean_Q6_Theology = mean(Q6_Theology, na.rm = TRUE))
+
+library(data.table)
+setDT(admissions_data)
+admissions_data[understanding_theology_bin == "high", mean(Q6_Theology, na.rm = TRUE)]
+
+```
+
+
+
+
+```{r}
+q6 <- c(data1[18:29])
+q7 <- c(data1[29:40])
+q10 <- c(data1[43:56])
+q11 <- c(data1[57:70])
+q12 <- c(data1[71:80])
+
+```
+
+
+# Appendix A: Instrument
