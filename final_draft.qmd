@@ -21,7 +21,7 @@ library(tidyverse)  |> suppressPackageStartupMessages()
 library(data.table)  |> suppressPackageStartupMessages()
 library(formattable)  |> suppressPackageStartupMessages()
 library(corrplot)  |> suppressPackageStartupMessages()
-
+library(ggcorrplot)  |> suppressPackageStartupMessages()
 # Set a few color variables to make our table more visually appealing
 customGreen0 = "#DeF7E9"
 customGreen = "#71CA97"
@@ -53,6 +53,15 @@ admissions_data <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data -
 # Preserve a second dataframe as numeric without factoring, for the sake of cor() later
 admissions_data_numeric <- read_excel("./data/survey_raw_data.xlsx", sheet = "Raw data - completes")
 admissions_data_numeric <- select(admissions_data_numeric, -c(Q17_other, Q18_other))
+
+# Custom libraries
+
+# Get the lower triangle of the correlation matrix
+get_lower_tri <- function(cormat) {
+  cormat[upper.tri(cormat)] <- NA
+  return(cormat)
+}
+
 ```
 
 ```{r refactoring}
@@ -138,6 +147,7 @@ admissions_data <- admissions_data %>%
       TRUE ~ NA
     ) %>% factor(levels = c("low", "neutral", "high"))
   )
+
 # For Q5 - understanding
 
 admissions_data <- admissions_data %>%
@@ -150,6 +160,7 @@ admissions_data <- admissions_data %>%
       TRUE ~ NA
     ) %>% factor(levels = c("low", "neutral", "high"))
   )
+
 # For Q6 - interest
 
 admissions_data <- admissions_data %>%
@@ -275,13 +286,14 @@ There were three additional sifting questions: (1) we asked respondents their ag
 The sample was distributed evenly across the age cohorts with around 300 responses from each category:
 
 ```{r age}
+#| fig-cap: "Figure 1. Respondent Age Distribution"
 q2_labels <- c("16" = 1, "17" = 2, "18" = 3, "19" = 4)
 
 ggplot(admissions_data, aes(factor(Q2))) + 
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
   scale_y_continuous(limits = c(0, 360)) +
-  labs(title = "Respondent Age Distribution", x = "Age", y = "") +
+  labs(title = "", x = "Age", y = "") +
   scale_x_discrete(labels = labels(q2_labels))
 ```
 
@@ -377,25 +389,31 @@ plot(likert(Q7))
 When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `{r} round(cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs"), digits=1)`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
 ```{r correlation plot for employability and interest}
-cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
-
-Q6 <- admissions_data_numeric %>%
+# Setup 
+Q6 <- admissions_data %>%
   select(starts_with("Q6"))
-Q7 <- admissions_data_numeric %>%
+Q7 <- admissions_data %>%
   select(starts_with("Q7"))         
+
+## Alternative to use a single dataframe:
+# cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
 
 names(Q6) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
 names(Q7) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
-         
-M <- cor(Q6, Q7, use = "complete.obs")
 
-corrplot(M, method = "number",
-         tl.col = "black", tl.cex = 0.8, tl.srt = 45, cl.cex = 0.7, 
-         number.cex = 0.6,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2",
-         xlab = "My X-Axis Label", 
-         ylab = "Another Label")
+q6q7_corrplot <- cor(Q6, Q7, use = "complete.obs")
+
+# Define custom colors
+my_colors <- c("#6D9EC1", "white", "#E46726")
+
+# Create the plot
+ggplot(data = reshape2::melt(q6q7_corrplot), aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradientn(colors = my_colors, limits = c(-1, 1)) +
+  labs(x = "Q6: Interest", y = "Q7: Understanding", fill = "Correlation\nMeasure") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3.5) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10))
 ```
 
 ## Interest in subjects
@@ -428,15 +446,24 @@ It is also interesting to note that no subject exceeded more than 50% interest a
 We can generate a correlation matrix to assess whether interest in one subject correlated to others:
 
 ```{r subject interest correlation matrix}
-Q6 <- admissions_data_numeric %>%
+# Create dataframe and add tidy labels
+Q6 <- admissions_data %>%
   select(starts_with("Q6"))
 
+names(Q6) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+# Create the matrix
 Q6_correlation_matrix <- cor(Q6, use = "complete.obs")
 
-corrplot(Q6_correlation_matrix, method = "number", type = "upper",
-         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2")
+# Melt the correlation matrix and create the heatmap
+ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10)) +
+  coord_fixed()
 ```
 
 We can see that there are several reasonably strong positive correlations and these are all clustered around TRS, ethics and philosophy with the exception of the strong correlation between interest in computer science and math. For interest in theology, the strongest correlations are with interest in religious studies (ρ0.62) ethics (ρ0.60) and philosophy (ρ0.57). For interest in religious studies, the strongest correlations are with interest in the same subjects, albeit with slightly lower correlations: these are theology (ρ0.62), ethics (ρ0.56) and philosophy (ρ0.54).
@@ -448,12 +475,19 @@ Q6_no_GCSE <- admissions_data_numeric %>%
   filter(Q14 == 2) %>%
   select(starts_with("Q6"))
 
+names(Q6_no_GCSE) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 Q6_correlation_matrix <- cor(Q6_no_GCSE, use = "complete.obs")
 
-corrplot(Q6_correlation_matrix, method = "number", type = "upper",
-         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2")
+# Melt the correlation matrix and create the heatmap
+ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10)) +
+  coord_fixed()
 ```
 
 One should be careful not to confuse correlation here with causation, as it is possible that the students who self-select to participate in RE GCSE bring a certain orientation, and not necessarily that their coursework alters their understanding of the subject composition. Nonetheless, we note that while some correlations remain relatively stable across the two cohorts, for example, relating philosophy and ethics, the salience of the relationship between several subjects for this subset of respondents loosens substantially. This includes the relationship between interest in religious studies and theology which drops to ) as well as theology and ethics ().
@@ -463,12 +497,18 @@ Q6_yes_GCSE <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
 
+names(Q6_yes_GCSE) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 Q6_correlation_matrix <- cor(Q6_yes_GCSE, use = "complete.obs")
 
-corrplot(Q6_correlation_matrix, method = "number", type = "upper",
-         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2")
+ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10)) +
+  coord_fixed()
 ```
 
 Looking at the subset of pupils who indicate they have taken RE GCSE, we can see similar trends in the opposite direction.
@@ -480,12 +520,18 @@ Q6_yes_religious <- admissions_data_numeric %>%
   filter(religion_bin == 1) %>%
   select(starts_with("Q6"))
 
+names(Q6_yes_religious) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 Q6_correlation_matrix <- cor(Q6_yes_religious, use = "complete.obs")
 
-corrplot(Q6_correlation_matrix, method = "number", type = "upper",
-         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2")
+ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10)) +
+  coord_fixed()
 ```
 
 ## What does study of this subject include?
@@ -567,16 +613,18 @@ However, in all cases where a respondent marked that they "Strongly Agree" with 
 Given the differences in correlations shown above based on a pupil's participation in GCSE study, we sought to understand whether participation in A-Levels had a correlation with interest in TRS study. This was a small sample, only 7% of students who took the survey indicated "Yes" to the question "Are you currently studying A level Religious Studies, or intending to?” But there was some sense of correlation
 
 ```{r}
-Q6_yes_a_levels <- admissions_data %>%
+Q6_yes_a_levels_likert <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
 
+names(Q6_yes_a_levels_likert) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 # Likert() loves a good data frame
-Q6_yes_a_levels <- as.data.frame(Q6_yes_a_levels)
+Q6_yes_a_levels_likert <- as.data.frame(Q6_yes_a_levels_likert)
 
 # We need to convert named vectors into factors for likert()
-for (col in names(Q6_yes_a_levels)) {
-  Q6_yes_a_levels[[col]] <- factor(Q6_yes_a_levels[[col]], levels = c(
+for (col in names(Q6_yes_a_levels_likert)) {
+  Q6_yes_a_levels_likert[[col]] <- factor(Q6_yes_a_levels_likert[[col]], levels = c(
   "Strongly agree" = 1,
   "Agree" = 2,
   "Neither/Nor" = 3,
@@ -585,24 +633,31 @@ for (col in names(Q6_yes_a_levels)) {
 }
 
 # Reverse levels for plot
-for (col in names(Q6_yes_a_levels)) {
-Q6_yes_a_levels[[col]] <- factor(Q6_yes_a_levels[[col]], levels = rev(levels(Q6_yes_a_levels[[col]])))
+for (col in names(Q6_yes_a_levels_likert)) {
+Q6_yes_a_levels_likert[[col]] <- factor(Q6_yes_a_levels_likert[[col]], levels = rev(levels(Q6_yes_a_levels_likert[[col]])))
 }
 
-plot(likert(Q6_yes_a_levels))
+plot(likert(Q6_yes_a_levels_likert))
+```
 
-str(Q6_yes_a_levels)
 
+```{r}
 Q6_yes_a_levels <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
 
+names(Q6_yes_a_levels) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 Q6_correlation_matrix <- cor(Q6_yes_a_levels, use = "complete.obs")
 
-corrplot(Q6_correlation_matrix, method = "number", type = "upper",
-         tl.col = "black", tl.cex = 1, cl.cex = 1, number.cex = 0.5,
-         col = colorRampPalette(c("blue", "red"))(9),
-         order = "FPC", hclust.method = "ward.D2")
+ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
+        axis.text.y = element_text(size = 10)) +
+  coord_fixed()
 ```
 
 We can see how, for this subset, interest in religious studies and theology both increase substantially, particularly for the former of the two. Compare this to the (much larger) cohort in our study who reported they had not participated in RS A-Levels:
@@ -612,11 +667,13 @@ Q6_no_a_levels <- admissions_data %>%
   filter(Q14 == 2) %>%
   select(starts_with("Q6"))
 
+names(Q6_no_a_levels) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 # Likert() loves a good data frame
 Q6_no_a_levels <- as.data.frame(Q6_no_a_levels)
 
 # We need to convert named vectors into factors for likert()
-for (col in names(Q6_yes_a_levels)) {
+for (col in names(Q6_no_a_levels)) {
   Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = c(
   "Strongly agree" = 1,
   "Agree" = 2,
@@ -644,6 +701,8 @@ Q6_religious <- admissions_data %>%
   filter(religion_bin == "religious") %>%
   select(starts_with("Q6"))
 
+names(Q6_religious) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
 # Likert() loves a good data frame
 Q6_religious <- as.data.frame(Q6_religious)
 
@@ -658,7 +717,7 @@ for (col in names(Q6_religious)) {
 }
 
 # Reverse levels for plot
-for (col in names(Q6_no_a_levels)) {
+for (col in names(Q6_religious)) {
 Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = rev(levels(Q6_religious[[col]])))
 }
 plot(likert(Q6_religious))
@@ -668,20 +727,7 @@ plot(likert(Q6_religious))
 
 It was particularly interesting to note that there is positive interest in studying Theology in spite of the lack of understanding of what that study involves. Further research would be necessary to judge the meaning of this discovery, e.g. whether interest numbers would be increased, unaffected or lessened if the level of "unknowing" or conversely the "mystique" of the subject were reduced. For the sake of this study, we can explore the data to a certain extent in an attempt to ascertain whether the "mystique" factor is significant.
 
-If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE), digits=1)`. Bearing in mind that higher response codes in this dataset indicated a more negative response ("strongly disagree" was coded as 5 whereas "strongly agree" was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE), digits=2)` for neutral responses on understanding and a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE), digits=2)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
-
-```{r}
-cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
-
-Q6 <- admissions_data_numeric %>%
-  select(starts_with("Q6"))
-Q7 <- admissions_data_numeric %>%
-  select(starts_with("Q7"))         
-         
-M <- cor(Q6, Q7, use = "complete.obs")
-
-corrplot(M, method = 'number', number.cex = 0.5, col = corr_plot_scheme, tl.col = "black", order = 'hclust')
-```
+If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE), digits=1)`. Bearing in mind that higher response codes in this dataset indicated a more negative response ("strongly disagree" was coded as 5 whereas "strongly agree" was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE), digits=2)` for neutral responses on understanding and a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE), digits=2)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation, shown above as figure XX.
 
 Here, the least weak correlation (between interest and understanding of computer science) is just over 0.5, and even this correlation should be considered weak at best.
 
