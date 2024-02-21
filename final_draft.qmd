@@ -3,6 +3,8 @@ title: "Prospective UK undergraduate attitudes towards Theology and Religious St
 author: "Jeremy H. Kidwell"
 format: pdf
 editor: visual
+execute: 
+  echo: false
 ---
 
 ```{r setup}
@@ -278,6 +280,7 @@ q2_labels <- c("16" = 1, "17" = 2, "18" = 3, "19" = 4)
 ggplot(admissions_data, aes(factor(Q2))) + 
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
+  scale_y_continuous(limits = c(0, 360)) +
   labs(title = "Respondent Age Distribution", x = "Age", y = "") +
   scale_x_discrete(labels = labels(q2_labels))
 ```
@@ -285,14 +288,13 @@ ggplot(admissions_data, aes(factor(Q2))) +
 We also asked respondents to self-identify their gender, ethnic group and religion. Distribution across these categories was as follows:
 
 ```{r gender}
-q16_labels <- c("Male"=1, "Female"=2, "I identify my gender in another way"=3, "Prefer not to say"=4)
-
 ggplot(admissions_data, aes(factor(Q16))) + 
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
-  labs(title = "Respondent Gender Self-Identification Distribution", x = "Gender", y = "") +
-  scale_x_discrete(labels = labels(q16_labels)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10))
+  labs(title = "Respondent Gender Self-Identification Distribution", x = "", y = "") +
+  scale_y_continuous(limits = c(0, 730)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) +
+  scale_x_discrete(labels = str_wrap(c("Male", "Female", "I identify my gender in another way", "Prefer not to say"), width = 10))
 ```
 
 ```{r ethnicity}
@@ -301,18 +303,20 @@ q17_labels <- c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=
 ggplot(admissions_data, aes(factor(Q17))) +
   geom_bar(fill = "darkgreen", stat = "count") +
   geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
-  labs(title = "Respondent Ethnicity", x = "Ethnicity", y = "") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) + scale_x_discrete(labels = labels(q17_labels))
+  labs(title = "Respondent Ethnicity", x = "", y = "") +
+  scale_y_continuous(limits = c(0, 480)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) + scale_x_discrete(labels = labels(q17_labels)) +
+  scale_x_discrete(labels = str_wrap(c("Arab", "Indian", "Pakistani", "Bangladeshi", "Chinese", "Any other Asian background", "Black - African", "Black - Caribbean", "Any other Black background", "Mixed - White and Black Caribbean", "Mixed - White and Black African", "Mixed - White and Black Asian", "Any other Mixed/Multiple Ethnic background", "White - British", "White - Irish", "Any other White background", "Prefer not to say", "Other"), width = 18))
 ```
 
 ```{r religion}
 
-q18_labels <- c("Agnostic"=1, "Atheist"=2, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18)
-
+q18_labels <- c("Agnostic"=1, "Atheist"=2, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual\n but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18)
 ggplot(admissions_data, aes(factor(Q18))) +
   geom_bar(fill = "blue", stat = "count") +
+  scale_y_continuous(limits = c(0, 230)) +
   geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
-  labs(title = "Respondent Religion", x = "Religion", y = "") +
+  labs(title = "Respondent Religion", x = "", y = "") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) +
   scale_x_discrete(labels = labels(q18_labels))
 
@@ -370,7 +374,7 @@ names(Q7) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Th
 plot(likert(Q7))
 ```
 
-When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
+When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `{r} round(cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs"), digits=1)`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
 ```{r correlation plot for employability and interest}
 cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
@@ -379,10 +383,19 @@ Q6 <- admissions_data_numeric %>%
   select(starts_with("Q6"))
 Q7 <- admissions_data_numeric %>%
   select(starts_with("Q7"))         
+
+names(Q6) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+names(Q7) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
          
 M <- cor(Q6, Q7, use = "complete.obs")
 
-corrplot(M, method = 'number', number.cex = 0.5, col = corr_plot_scheme, tl.col = "black", order = 'hclust')
+corrplot(M, method = "number",
+         tl.col = "black", tl.cex = 0.8, tl.srt = 45, cl.cex = 0.7, 
+         number.cex = 0.6,
+         col = colorRampPalette(c("blue", "red"))(9),
+         order = "FPC", hclust.method = "ward.D2",
+         xlab = "My X-Axis Label", 
+         ylab = "Another Label")
 ```
 
 ## Interest in subjects
@@ -632,11 +645,11 @@ Q6_religious <- admissions_data %>%
   select(starts_with("Q6"))
 
 # Likert() loves a good data frame
-Q6_no_a_levels <- as.data.frame(Q6_no_a_levels)
+Q6_religious <- as.data.frame(Q6_religious)
 
 # We need to convert named vectors into factors for likert()
-for (col in names(Q6_yes_a_levels)) {
-  Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = c(
+for (col in names(Q6_religious)) {
+  Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = c(
   "Strongly agree" = 1,
   "Agree" = 2,
   "Neither/Nor" = 3,
@@ -646,23 +659,28 @@ for (col in names(Q6_yes_a_levels)) {
 
 # Reverse levels for plot
 for (col in names(Q6_no_a_levels)) {
-Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = rev(levels(Q6_no_a_levels[[col]])))
+Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = rev(levels(Q6_religious[[col]])))
+}
+plot(likert(Q6_religious))
 ```
 
 ## Some observations regarding mystique
 
 It was particularly interesting to note that there is positive interest in studying Theology in spite of the lack of understanding of what that study involves. Further research would be necessary to judge the meaning of this discovery, e.g. whether interest numbers would be increased, unaffected or lessened if the level of "unknowing" or conversely the "mystique" of the subject were reduced. For the sake of this study, we can explore the data to a certain extent in an attempt to ascertain whether the "mystique" factor is significant.
 
-If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE)`. Bearing in mind that higher response codes in this dataset indicated a more negative response (strongly disagree was coded as 5 whereas strongly agree was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE)` for neutral responses on understanding and a mean interest value of `mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
+If we look at the responses to Q6 around interest in studying the subject, we find that the mean response by respondents who indicated that they did not understand what the subject involved was `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "high"], na.rm = TRUE), digits=1)`. Bearing in mind that higher response codes in this dataset indicated a more negative response ("strongly disagree" was coded as 5 whereas "strongly agree" was coded as 1), we find that the sentiment shifts towards the negative for higher levels of perceived understanding, with a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "neutral"], na.rm = TRUE), digits=2)` for neutral responses on understanding and a mean interest value of `{r} round(mean(admissions_data$Q6_Theology[admissions_data$understanding_theology_bin == "low"], na.rm = TRUE), digits=2)` for low levels of understanding. We use the term "mystique effect" to refer to this pattern where the more a student thinks they understand the subject, the less interested they are in studying it. The same pattern holds true for interest in religious studies, with a mean interest score for high levels of understanding result. We believe that this effect should be observed with some caution, given that the correlations between understanding and interest are low for nearly all except for some outlier categories. This can be seen in a matrix of Pearson correlation coefficients for all responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
 ```{r}
-Q5Q6 <- admissions_data_numeric %>%
-  select(starts_with("Q6") | starts_with("Q5"))
+cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs")
+
 Q6 <- admissions_data_numeric %>%
   select(starts_with("Q6"))
+Q7 <- admissions_data_numeric %>%
+  select(starts_with("Q7"))         
+         
+M <- cor(Q6, Q7, use = "complete.obs")
 
-M <- cor(Q6, Q5, use = "complete.obs")
-corrplot(M, method = 'number', number.cex = 0.5, tl.col = "black")  # Displays colorful numbers
+corrplot(M, method = 'number', number.cex = 0.5, col = corr_plot_scheme, tl.col = "black", order = 'hclust')
 ```
 
 Here, the least weak correlation (between interest and understanding of computer science) is just over 0.5, and even this correlation should be considered weak at best.
@@ -671,20 +689,7 @@ Here, the least weak correlation (between interest and understanding of computer
 admissions_data %>%
   filter(understanding_theology_bin == "high") %>%
   summarise(mean_Q6_Theology = mean(Q6_Theology, na.rm = TRUE))
-
-library(data.table)
-setDT(admissions_data)
-admissions_data[understanding_theology_bin == "high", mean(Q6_Theology, na.rm = TRUE)]
-
 ```
 
-```{r}
-q6 <- c(data1[18:29])
-q7 <- c(data1[29:40])
-q10 <- c(data1[43:56])
-q11 <- c(data1[57:70])
-q12 <- c(data1[71:80])
-
-```
 
 # Appendix A: Instrument
