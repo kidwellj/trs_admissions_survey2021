@@ -21,13 +21,8 @@ library(tidyverse)  |> suppressPackageStartupMessages()
 library(data.table)  |> suppressPackageStartupMessages()
 library(formattable)  |> suppressPackageStartupMessages()
 library(corrplot)  |> suppressPackageStartupMessages()
-library(ggcorrplot)  |> suppressPackageStartupMessages()
-# Set a few color variables to make our table more visually appealing
-customGreen0 = "#DeF7E9"
-customGreen = "#71CA97"
-customRed = "#ff7f7f"
-coul3 <- brewer.pal(3, "RdYlBu") # Using RdYlBu range to generate 3 colour palette
-corr_plot_scheme <- brewer.pal(3, "PuOr")
+library(ggstats)  |> suppressPackageStartupMessages()
+
 # Set up local workspace, as needed:
 
 if (dir.exists("data") == FALSE) {
@@ -636,31 +631,60 @@ Given the differences in correlations shown above based on a pupil's participati
 ```{r}
 #| fig-cap: "Responses to 'I would be interested in studying this subject at University' (subset using A-Levels)"
 
-Q6_yes_a_levels_likert <- admissions_data_numeric %>%
-  filter(Q14 == 1) %>%
-  select(starts_with("Q6"))
+Q6_a_levels <- admissions_data %>%
+  select(Q13, starts_with("Q6"))
 
-names(Q6_yes_a_levels_likert) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
-
-# Likert() loves a good data frame
-Q6_yes_a_levels_likert <- as.data.frame(Q6_yes_a_levels_likert)
+Q6_a_levels <- filter(Q6_a_levels, Q13 < 3)
 
 # We need to convert named vectors into factors for likert()
-for (col in names(Q6_yes_a_levels_likert)) {
-  Q6_yes_a_levels_likert[[col]] <- factor(Q6_yes_a_levels_likert[[col]], levels = c(
+for (col in names(Q6_a_levels)) {
+  if (grepl("Q6", col)) {
+  Q6_a_levels[[col]] <- factor(Q6_a_levels[[col]], levels = c(
   "Strongly agree" = 1,
   "Agree" = 2,
   "Neither/Nor" = 3,
   "Disagree" = 4,
   "Strongly disagree" = 5))
+  }
 }
+
+names(Q6_a_levels) <- c("Q13", "Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+Q6_a_levels <- Q6_a_levels %>%
+  mutate(Q13 = ifelse(Q13 == 1, "Yes", "No"))
 
 # Reverse levels for plot
-for (col in names(Q6_yes_a_levels_likert)) {
-Q6_yes_a_levels_likert[[col]] <- factor(Q6_yes_a_levels_likert[[col]], levels = rev(levels(Q6_yes_a_levels_likert[[col]])))
+for (col in names(Q6_a_levels)) {
+  if (grepl("Q6", col)) {
+  Q6_a_levels[[col]] <- factor(Q6_a_levels[[col]], levels = rev(levels(Q6_a_levels[[col]])))
+  }
 }
 
-plot(likert(Q6_yes_a_levels_likert))
+# Likert() loves a good data frame
+Q6_a_levels <- as.data.frame(Q6_a_levels)
+
+p <- gglikert(
+  data = Q6_a_levels,
+  include = Philosophy:Business,
+  facet_rows = vars(Q13),
+  add_labels = TRUE,
+  variable_labels = common_labels,
+  y_label_wrap = 20,
+  sort = "descending", sort_method = "mean",
+  labels_size = 3
+)
+
+p +
+  geom_text(
+    aes(
+      label = label_number_abs()(after_stat(count))
+    ),
+    stat = StatProp,
+    complete = "fill",
+    position = position_likert(vjust = 0.5)
+  )
+
+plot(p)
 ```
 
 
@@ -685,37 +709,7 @@ ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE)
   coord_fixed()
 ```
 
-We can see how, for this subset, interest in religious studies and theology both increase substantially, particularly for the former of the two. Compare this to the (much larger) cohort in our study who reported they had not participated in RS A-Levels:
-
-```{r}
-#| fig-cap: "Responses to 'I would be interested in studying this subject at University'"
-
-Q6_no_a_levels <- admissions_data %>%
-  filter(Q14 == 2) %>%
-  select(starts_with("Q6"))
-
-names(Q6_no_a_levels) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
-
-# Likert() loves a good data frame
-Q6_no_a_levels <- as.data.frame(Q6_no_a_levels)
-
-# We need to convert named vectors into factors for likert()
-for (col in names(Q6_no_a_levels)) {
-  Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = c(
-  "Strongly agree" = 1,
-  "Agree" = 2,
-  "Neither/Nor" = 3,
-  "Disagree" = 4,
-  "Strongly disagree" = 5))
-}
-
-# Reverse levels for plot
-for (col in names(Q6_no_a_levels)) {
-Q6_no_a_levels[[col]] <- factor(Q6_no_a_levels[[col]], levels = rev(levels(Q6_no_a_levels[[col]])))
-}
-
-plot(likert(Q6_no_a_levels))
-```
+We can see how, for this subset, interest in religious studies and theology both increase substantially, particularly for the former of the two. Compare this to the (much larger) cohort in our study who reported they had not participated in RS A-Levels in the chart above.
 
 ## Are interested students religious?
 
@@ -783,6 +777,18 @@ admissions_data %>%
   filter(understanding_theology_bin == "high") %>%
   summarise(mean_Q6_Theology = mean(Q6_Theology, na.rm = TRUE))
 ```
+
+# Future research
+
+This analysis reveals some baseline challenges which would be appropriate for future research
+
+Develop and trial ways of explaining what the subjects are about to prospective students. In practice this would probably take the form of developing key USP style slogans and A/B testing these messages to see how prospective students respond.
+
+Undertake further research exploring reactions by prospective students to JH/interdisciplinary programmes. The core research question here relates to how and whether we should emphasise interdisciplinary learning as a feature of our programmes (especially the relation to “ethics” and upcoming influences from ”worldviews”).
+
+Develop and trial with focus groups marketing materials which engage specific religion / nonreligion of prospective undergraduate students.
+
+Probe the apparent lack of connection between A level and GCSE RE and interest in study on TRS programmes and test for alternative pathways (a-levels in sociology, psychology, etc)
 
 
 # Appendix A: Instrument
