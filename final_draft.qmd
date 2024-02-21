@@ -286,7 +286,7 @@ There were three additional sifting questions: (1) we asked respondents their ag
 The sample was distributed evenly across the age cohorts with around 300 responses from each category:
 
 ```{r age}
-#| fig-cap: "Figure 1. Respondent Age Distribution"
+#| fig-cap: "Respondent Age Distribution"
 q2_labels <- c("16" = 1, "17" = 2, "18" = 3, "19" = 4)
 
 ggplot(admissions_data, aes(factor(Q2))) + 
@@ -300,35 +300,40 @@ ggplot(admissions_data, aes(factor(Q2))) +
 We also asked respondents to self-identify their gender, ethnic group and religion. Distribution across these categories was as follows:
 
 ```{r gender}
+#| fig-cap: "Respondent Gender Self-Identification Distribution"
+
 ggplot(admissions_data, aes(factor(Q16))) + 
   geom_bar() +
   geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.5) +
-  labs(title = "Respondent Gender Self-Identification Distribution", x = "", y = "") +
+  labs(title = "", x = "", y = "") +
   scale_y_continuous(limits = c(0, 730)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) +
   scale_x_discrete(labels = str_wrap(c("Male", "Female", "I identify my gender in another way", "Prefer not to say"), width = 10))
 ```
 
 ```{r ethnicity}
+#| fig-cap: "Respondent Ethnicity"
+
 q17_labels <- c("Arab"=1, "Indian"=2, "Pakistani"=3, "Bangladeshi"=4, "Chinese"=5, "Any other Asian background"=6, "Black - African"=7, "Black - Caribbean"=8, "Any other Black background"=9, "Mixed - White and Black Caribbean"=10, "Mixed - White and Black African"=11, "Mixed - White and Black Asian"=12, "Any other Mixed/Multiple Ethnic background"=13, "White - British"=14, "White - Irish"=15, "Any other White background"=16, "Prefer not to say"=17, "Other"=18)
 
 ggplot(admissions_data, aes(factor(Q17))) +
   geom_bar(fill = "darkgreen", stat = "count") +
   geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
-  labs(title = "Respondent Ethnicity", x = "", y = "") +
+  labs(title = "", x = "", y = "") +
   scale_y_continuous(limits = c(0, 480)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) + scale_x_discrete(labels = labels(q17_labels)) +
   scale_x_discrete(labels = str_wrap(c("Arab", "Indian", "Pakistani", "Bangladeshi", "Chinese", "Any other Asian background", "Black - African", "Black - Caribbean", "Any other Black background", "Mixed - White and Black Caribbean", "Mixed - White and Black African", "Mixed - White and Black Asian", "Any other Mixed/Multiple Ethnic background", "White - British", "White - Irish", "Any other White background", "Prefer not to say", "Other"), width = 18))
 ```
 
 ```{r religion}
+#| fig-cap: "Respondent Religion"
 
 q18_labels <- c("Agnostic"=1, "Atheist"=2, "Buddhist"=4, "Christian"=5, "Confucian"=6, "Jain"=7, "Jewish"=8, "Hindu"=9, "Muslim"=11, "Pagan"=12, "Shinto"=13, "Sikh"=14, "Spiritual\n but not religious"=15, "Zoroastrian"=16, "No religion"=17, "Other"=18)
 ggplot(admissions_data, aes(factor(Q18))) +
   geom_bar(fill = "blue", stat = "count") +
   scale_y_continuous(limits = c(0, 230)) +
   geom_text(stat = "count", aes(label = scales::percent(after_stat(count / sum(count)))), vjust = -0.5, size=2.5) +  
-  labs(title = "Respondent Religion", x = "", y = "") +
+  labs(title = "", x = "", y = "") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), text = element_text(size = 10)) +
   scale_x_discrete(labels = labels(q18_labels))
 
@@ -341,6 +346,8 @@ We asked our respondents to tell us about their attitudes towards a variety of s
 ## Understanding of subjects
 
 ```{r understanding}
+#| fig-cap: "Responses to 'I have a good understanding of what this subject involves...'"
+
 Q5 <- admissions_data %>%
   select(starts_with("Q5"))
 
@@ -366,6 +373,8 @@ We've plotted these results as a diverging bar chart centred on neutral response
 ## Employability prospects
 
 ```{r employability prospects}
+#| fig-cap: "Responses on subject 'employability prospects'"
+
 Q7 <- admissions_data %>%
   select(starts_with("Q7"))
 
@@ -389,6 +398,8 @@ plot(likert(Q7))
 When responding to the question around employability prospects, the responses were as one might expect with public stereotypes around the "value" of study in the humanities conveyed with a sharp drop and quite optimistic assessments of math and science. As we will explore further below, employability does not seem to be strongly correlated to student subject interest. This can be seen with theology, where a Pearson test shows a value of `{r} round(cor(admissions_data_numeric$Q6_Theology, admissions_data_numeric$Q7_Theology, use = "complete.obs"), digits=1)`, very little correlation between responses on Theology for Q6 and Q7. And indeed, this lack of correlation holds true for almost all categories as a matrix of Pearson correlation coefficients for responses to these two questions. Values closer to +/-1 indicate a strong correlation, whereas values closer to 0 indicate a lack of correlation:
 
 ```{r correlation plot for employability and interest}
+#| fig-cap: "Correlation of Understanding and Interest"
+
 # Setup 
 Q6 <- admissions_data %>%
   select(starts_with("Q6"))
@@ -411,7 +422,7 @@ ggplot(data = reshape2::melt(q6q7_corrplot), aes(x = Var1, y = Var2, fill = valu
   geom_tile() +
   scale_fill_gradientn(colors = my_colors, limits = c(-1, 1)) +
   labs(x = "Q6: Interest", y = "Q7: Understanding", fill = "Correlation\nMeasure") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3.5) +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 2.5) +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10))
 ```
@@ -419,6 +430,8 @@ ggplot(data = reshape2::melt(q6q7_corrplot), aes(x = Var1, y = Var2, fill = valu
 ## Interest in subjects
 
 ```{r interest in studying}
+#| fig-cap: "Responses to 'I would be interested in studying this subject at University'"
+
 Q6 <- admissions_data %>%
   select(starts_with("Q6"))
 
@@ -446,6 +459,8 @@ It is also interesting to note that no subject exceeded more than 50% interest a
 We can generate a correlation matrix to assess whether interest in one subject correlated to others:
 
 ```{r subject interest correlation matrix}
+#| fig-cap: "Correlation across different subject interests"
+
 # Create dataframe and add tidy labels
 Q6 <- admissions_data %>%
   select(starts_with("Q6"))
@@ -459,7 +474,7 @@ Q6_correlation_matrix <- cor(Q6, use = "complete.obs")
 ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  geom_text(aes(label = round(value, 1)), color = "black", size = 2.5) +
   labs(x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10)) +
@@ -471,6 +486,8 @@ We can see that there are several reasonably strong positive correlations and th
 We will explore further Further research would be helpful in identifying the significance of these associations in the next section. It is interesting to compare the results above subsetting data based on whether a given pupil has or has not taken RE as a GCSE subject. Responses to this question (Q14) were split fairly evenly among our respondents with 493 responding "yes" and 432 "no". The differences here are striking:
 
 ```{r}
+#| fig-cap: "Correlation across different subject interests (no RS GCSE study)"
+
 Q6_no_GCSE <- admissions_data_numeric %>%
   filter(Q14 == 2) %>%
   select(starts_with("Q6"))
@@ -483,7 +500,7 @@ Q6_correlation_matrix <- cor(Q6_no_GCSE, use = "complete.obs")
 ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  geom_text(aes(label = round(value, 1)), color = "black", size = 2.5) +
   labs(x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10)) +
@@ -493,6 +510,8 @@ ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE)
 One should be careful not to confuse correlation here with causation, as it is possible that the students who self-select to participate in RE GCSE bring a certain orientation, and not necessarily that their coursework alters their understanding of the subject composition. Nonetheless, we note that while some correlations remain relatively stable across the two cohorts, for example, relating philosophy and ethics, the salience of the relationship between several subjects for this subset of respondents loosens substantially. This includes the relationship between interest in religious studies and theology which drops to ) as well as theology and ethics ().
 
 ```{r}
+#| fig-cap: "Correlation across different subject interests (yes to RS GCSE study)"
+
 Q6_yes_GCSE <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
@@ -504,7 +523,7 @@ Q6_correlation_matrix <- cor(Q6_yes_GCSE, use = "complete.obs")
 ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  geom_text(aes(label = round(value, 1)), color = "black", size = 2.5) +
   labs(x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10)) +
@@ -516,6 +535,8 @@ Looking at the subset of pupils who indicate they have taken RE GCSE, we can see
 We can also analyse for the strength of correlations for students who identify as religious:
 
 ```{r}
+#| fig-cap: "Correlation across different subject interests (religious students)"
+
 Q6_yes_religious <- admissions_data_numeric %>%
   filter(religion_bin == 1) %>%
   select(starts_with("Q6"))
@@ -527,7 +548,7 @@ Q6_correlation_matrix <- cor(Q6_yes_religious, use = "complete.obs")
 ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  geom_text(aes(label = round(value, 1)), color = "black", size = 2.5) +
   labs(x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10)) +
@@ -613,6 +634,8 @@ However, in all cases where a respondent marked that they "Strongly Agree" with 
 Given the differences in correlations shown above based on a pupil's participation in GCSE study, we sought to understand whether participation in A-Levels had a correlation with interest in TRS study. This was a small sample, only 7% of students who took the survey indicated "Yes" to the question "Are you currently studying A level Religious Studies, or intending to?” But there was some sense of correlation
 
 ```{r}
+#| fig-cap: "Responses to 'I would be interested in studying this subject at University' (subset using A-Levels)"
+
 Q6_yes_a_levels_likert <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
@@ -642,6 +665,8 @@ plot(likert(Q6_yes_a_levels_likert))
 
 
 ```{r}
+#| fig-cap: "Responses to 'I would be interested in studying this subject at University'"
+
 Q6_yes_a_levels <- admissions_data_numeric %>%
   filter(Q14 == 1) %>%
   select(starts_with("Q6"))
@@ -653,7 +678,7 @@ Q6_correlation_matrix <- cor(Q6_yes_a_levels, use = "complete.obs")
 ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE), aes(Var2, Var1, fill = value)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#6D9EC1", high = "#E46726", mid = "white", midpoint = 0, limit = c(-1, 1), name = "Pearson \nCorrelation") +
-  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  geom_text(aes(label = round(value, 1)), color = "black", size = 2.5) +
   labs(x = "", y = "") +
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1, size = 10),
         axis.text.y = element_text(size = 10)) +
@@ -663,6 +688,8 @@ ggplot(data = reshape2::melt(get_lower_tri(Q6_correlation_matrix), na.rm = TRUE)
 We can see how, for this subset, interest in religious studies and theology both increase substantially, particularly for the former of the two. Compare this to the (much larger) cohort in our study who reported they had not participated in RS A-Levels:
 
 ```{r}
+#| fig-cap: "Responses to 'I would be interested in studying this subject at University'"
+
 Q6_no_a_levels <- admissions_data %>%
   filter(Q14 == 2) %>%
   select(starts_with("Q6"))
@@ -697,30 +724,50 @@ Positive sentiments also did not correlate in significant ways to participation 
 Negative responses for "theology" do not correlate in easily perceptible ways to religious identity. Prospective students who marked "Atheist" (68%) and "No religion" (77%) were likely to indicate disagreement, but so were Hindu (71%), Muslim (65%) and Pagan (71%) students. Lower, but still significant Disagree/Strongly Disagree responses were also the case for "Spiritual but not religious" (53%), "Christian" (55%) and "Agnostic" (55%) students.
 
 ```{r}
+#| fig-cap: "Responses to 'I would be interested in studying this subject at University' (subset using religion)"
+
 Q6_religious <- admissions_data %>%
-  filter(religion_bin == "religious") %>%
-  select(starts_with("Q6"))
-
-names(Q6_religious) <- c("Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
-
-# Likert() loves a good data frame
-Q6_religious <- as.data.frame(Q6_religious)
+  select(religion_bin, starts_with("Q6"))
 
 # We need to convert named vectors into factors for likert()
 for (col in names(Q6_religious)) {
+  if (grepl("Q6", col)) {
   Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = c(
   "Strongly agree" = 1,
   "Agree" = 2,
   "Neither/Nor" = 3,
   "Disagree" = 4,
   "Strongly disagree" = 5))
+  }
 }
 
 # Reverse levels for plot
 for (col in names(Q6_religious)) {
-Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = rev(levels(Q6_religious[[col]])))
+  if (grepl("Q6", col)) {
+  Q6_religious[[col]] <- factor(Q6_religious[[col]], levels = rev(levels(Q6_religious[[col]])))
+  }
 }
-plot(likert(Q6_religious))
+
+names(Q6_religious) <- c("religion_bin", "Philosophy", "Sociology", "Psychology", "History", "Ethics", "Theology", "Religious Studies", "Politics", "English", "Math", "Computer Science", "Business")
+
+p <- gglikert(
+  data = Q6_religious,
+  include = Philosophy:Business,
+  facet_rows = vars(religion_bin),
+  add_labels = FALSE
+)
+
+p +
+  geom_text(
+    aes(
+      label = label_number_abs()(after_stat(count))
+    ),
+    stat = StatProp,
+    complete = "fill",
+    position = position_likert(vjust = 0.5)
+  )
+
+plot(p)
 ```
 
 ## Some observations regarding mystique
